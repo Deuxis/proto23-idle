@@ -188,11 +188,11 @@ input:focus {
 }
 
 .doselect {
-	-moz-users-select: ;
-	-khtml-user-select: ;
-	-webkit-user-select: ;
-	user-select: ;
-	cursor:
+	-moz-users-select: text;
+	-khtml-user-select: text;
+	-webkit-user-select: text;
+	user-select: text;
+	cursor: auto;
 }
 
 .bts_m_b {
@@ -926,6 +926,3 @@ body {
 	}
 
 }
-
-//gmsgs rgb(40,30,70)
-//crf_r linear-gradient(0deg,rgb(32,7,41),rgb(36,21,68))
