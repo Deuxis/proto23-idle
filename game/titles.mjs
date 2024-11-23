@@ -1,8 +1,9 @@
 ///////////////////////////////////////////
 //TTL
 ///////////////////////////////////////////
-import you from './you.mjs'
+import global from './global.mjs'
 import act from './actions.mjs'
+import { msg } from './dom.mjs'
 
 export const ttl = {}
 export { ttl as default }
@@ -14,6 +15,15 @@ function Title(id) {
 	this.tget = false
 	this.rar = 1
 	this.onGet = function () { }
+}
+
+export function giveTitle(title, lv, addDesc, you) {
+	if (title.have === false) {
+		global.titles.push(title); if (title.id !== 0) global.titlese.push(title); you.title = title; title.have = true; if (!title.tget && title.talent) { title.talent(); title.tget = true }
+		title.onGet()
+		for (let x in global.ttlschk) global.ttlschk[x]()
+		if (!lv) { msg('New Title Earned! ' + col('"' + title.name + '"', 'orange'), 'cyan', title, 5, undefined, undefined, addDesc); dom.d3.update() }
+	} else return
 }
 
 ttl.new = new Title(0)
@@ -87,8 +97,8 @@ ttl.plm.desc = 'You found it fun to make little holes in plant leaves and look t
 ttl.wlk = new Title(17)
 ttl.wlk.name = 'Walker'
 ttl.wlk.desc = 'All this walking around feels very beneficial for your body'
-ttl.wlk.talent = function () { you.mods.runerg -= .05 }
-ttl.wlk.onGet = function () { if (act.demo.active) you.mods.sdrate -= .005 }
+ttl.wlk.talent = function (you) { you.mods.runerg -= .05 }
+ttl.wlk.onGet = function (you) { if (act.demo.active) you.mods.sdrate -= .005 }
 ttl.wlk.tdesc = 'Running consumes 5% less energy'
 
 ttl.eat1 = new Title(18)
@@ -122,8 +132,8 @@ ttl.rnr.desc = 'Your body is in much better shape, so is your stamina. Moving ar
 ttl.jgg = new Title(25)
 ttl.jgg.name = 'Jogger'; ttl.jgg.rar = 2
 ttl.jgg.desc = 'Simply walking doesn\'t cut it anymore, maybe you should speed up a bit while travelling on foot?'
-ttl.jgg.talent = function () { you.mods.runerg -= .15 }
-ttl.jgg.onGet = function () { if (act.demo.active) you.mods.sdrate -= .015 }
+ttl.jgg.talent = function (you) { you.mods.runerg -= .15 }
+ttl.jgg.onGet = function (you) { if (act.demo.active) you.mods.sdrate -= .015 }
 ttl.jgg.tdesc = 'Running consumes 15% less energy'
 
 ttl.spn = new Title(26)
@@ -197,7 +207,7 @@ ttl.rfpn1.desc = 'All the time you had to consume disgusting rotten stuff is fin
 ttl.rfpn2 = new Title(43)
 ttl.rfpn2.name = 'Iron Stomach'; ttl.rfpn2.rar = 2
 ttl.rfpn2.desc = 'Going through these desperate times of having such an unsafe diet, your stomach doesn\'t feel as awful anymore. You really shouldn\'t be doing that'
-ttl.rfpn2.talent = function () { you.mods.survinf++ }
+ttl.rfpn2.talent = function (you) { you.mods.survinf++ }
 ttl.rfpn2.tdesc = 'Allows you to roughly guess when perishable food rots (shift key)'
 
 ttl.rfpn3 = new Title(44)

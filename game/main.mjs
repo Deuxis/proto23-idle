@@ -1,38 +1,47 @@
 import global from './global.mjs';
-import dom from './dom.mjs';
-import you from './you.mjs'
+import dom, { addElement, msg } from './dom.mjs';
+import youHolder, { makeYou } from './you.mjs'
 import act, { acts, giveAction } from './actions.mjs'
-import ttl from './titles.mjs'
+import ttl, { giveTitle } from './titles.mjs'
 import effect from './effect.mjs';
 import timers from './timers.mjs';
 import skl from './skills.mjs';
+import item from './item.mjs';
+import eqp from './equipment.mjs';
+import callback, { attachCallback, detachCallback } from './callback.mjs';
+import creature from './creature.mjs';
+import sector, {sectors} from './sector.mjs';
+import chss from './chss.mjs';
+
+const { you } = youHolder
 
 var listen = new Object();
 var w_manager = new Object();
-var creature = new Object();
 var offline = new Object();
-var wpn = new Object(), eqp = new Object(), acc = new Object(), sld = new Object(), item = new Object(), itemgroup = [item, wpn, eqp, sld, acc];
+var wpn = new Object(), acc = new Object(), sld = new Object(), itemgroup = [item, wpn, eqp, sld, acc];
 var rcp = new Object();
 var area = new Object();
-var chss = new Object();
 var abl = new Object();
 var furniture = new Object();
 var vendor = new Object();
 var quest = new Object();
 var test = new Object();
-var callback = new Object();
 var effector = new Object();
 var planner = new Object(), plans = [[], [], []];
-var sector = new Object(), sectors = [];
 var check = new Object(), checksd = [];
 var inv = [], furn = [], qsts = [], dar = [[], [], [], [], []], home = new Object()
-eqp.dummy = {};
 var container = new Object();
 var mastery = new Object();
 const YEAR = 518400, MONTH = 43200, DAY = 1440, WEEK = 10080, HOUR = 60;
 const SILVER = 100, GOLD = 10000;
 
 window.addEventListener('load', () => { load() });
+
+// A bunch of init code that was on toplevel of main previously, immediately executed
+const init = () => {
+	makeYou()
+}
+init()
 
 function save(lvr) {
 	let storage = window.localStorage; global.flags.savestate = true; global.stat.gsvs++;
@@ -157,7 +166,7 @@ function load(dt) {
 		for (let a in a6) for (let b in skl) if (a6[a].id === skl[b].id) {
 			you.skls.push(skl[b]); skl[b].lvl = a6[a].lvl;
 			for (let c in a6[a].mst) skl[b].mlstn[c].g = a6[a].mst[c];
-			if (skl[b].mlstn) for (let d in skl[b].mlstn) if (skl[b].mlstn[d].g === false && skl[b].mlstn[d].lv <= skl[b].lvl) { ; skl[b].mlstn[d].f(); skl[b].mlstn[d].g = true; msg("NEW PERK UNLOCKED " + '<span style="color:tomato">("' + skl[b].name + '")<span style="color:orange">lvl: ' + skl[b].mlstn[d].lv + '</span></span>', 'lime', { x: skl[b].name, y: 'Perk lvl ' + skl[b].mlstn[d].lv + ': <span style="color:yellow">' + skl[b].mlstn[d].p + '</span>' }, 7); }
+			if (skl[b].mlstn) for (let d in skl[b].mlstn) if (skl[b].mlstn[d].g === false && skl[b].mlstn[d].lv <= skl[b].lvl) { ; skl[b].mlstn[d].f(); skl[b].mlstn[d].g = true; msg("NEW PERK UNLOCKED " + '<span style="color:tomato">("' + skl[b].name + '")<span style="color:orange">lvl: ' + skl[b].mlstn[d].lv + '</span></span>', 'lime', { x: skl[b].name, y: 'Perk lvl ' + skl[b].mlstn[d].lv + ': <span style="color:yellow">' + skl[b].mlstn[d].p + '</span>' }, 7, undefined, undefined, addDesc); }
 		}
 		var ro = []; for (let io in global.rec_d) ro.push(global.rec_d[io].id);
 		let a7 = JSON.parse(str[3]); let skk = 0; for (let obj in skl) if (a7[skk]) {
@@ -261,7 +270,7 @@ function load(dt) {
 	if (global.flags.autosave === true) { dom.autosves.checked = true; timers.autos = setInterval(function () { save(true); }, 30000) }
 	//if(global.flags.msgtm===true)dom.ct_bt4_61b.checked=true;
 	////patch things 
-	if (skl.pet.lvl >= 10) giveTitle(ttl.pet3);
+	if (skl.pet.lvl >= 10) giveTitle(ttl.pet3, undefined, undefined, you);
 	if (item.amrthsck.data.finished) giveRcp(rcp.appljc)
 	////////////////
 	if (dom.loading) { fade(dom.loading, 5, true); delete dom.loading; }; if (dom.loadingt) { fade(dom.loadingt, 5, true); delete dom.loadingt; }
@@ -303,41 +312,13 @@ weather.thunder.ontick = function () {
 		if (!f || f.active === false) giveEff(global.current_m, effect.wet, 5)
 		if (random() < .0009) {
 			global.stat.lgtstk++;
-			msg("You were struck by lightning!", 'black', null, null, 'yellow');
+			msg("You were struck by lightning!", 'black', null, null, 'yellow', undefined, addDesc);
 			let d = (200 / (1 + skl.aba.lvl * .05)) << 0;
 			if (you.hp - d < 0) { global.atkdfty[0] = 1; you.hp = 0; you.onDeath();; giveSkExp(skl.painr, 300); giveSkExp(skl.dth, 100) } else { you.hp -= d; giveSkExp(skl.painr, 170) } giveSkExp(skl.aba, 30);
 			dom.d5_1_1.update();
 		}
 	}
 }
-
-function callbackManager(id) {
-	this.id = id || 0
-	this.hooks = [{ f: function (victim, killer) { }, id: 0, data: {} }]
-	this.fire = function () { }
-}
-
-callback.onDeath = new callbackManager(1);
-callback.onDeath.fire = function (victim, killer) {
-	for (let a in this.hooks) this.hooks[a].f(victim, killer)
-}
-
-function attachCallback(callback, what, data) {
-	callback.hooks.push(what)
-}
-
-function detachCallback(callback, what) {
-	for (let a in callback.hooks) if (callback.hooks[a].id === what) callback.hooks.splice(callback.hooks[a], 1)
-}
-
-/*attachCallback(callback.onDeath,{
-  f:function(victim, killer){
-	if(victim.id===112) this.data.a++
-	if(this.data.a===5) msg("KILLED FIVE",'yellow')
-  },
-  id:50,
-  data:{a:0,q:true}
-})*/
 
 function Time() {
 	this.minute = 0;
@@ -582,7 +563,7 @@ effect.wet.desc = 'You\'re drenched in water';
 effect.wet.type = 3;
 effect.wet.duration = 5;
 effect.wet.x = '雨'; effect.wet.c = 'cyan'; effect.wet.b = 'blue';
-effect.wet.onGive = function () { if (this.target.id === you.id) { msg('Your clothes get soaked', 'cyan', null, null, 'blue'); global.flags.iswet = true } };
+effect.wet.onGive = function () { if (this.target.id === you.id) { msg('Your clothes get soaked', 'cyan', null, null, 'blue', undefined, addDesc); global.flags.iswet = true } };
 effect.wet.onRemove = function () { msg('You dry up', 'orange'); global.flags.iswet = false };
 effect.wet.use = function () {
 	if (global.flags.inside === false && global.flags.israin === true && !you.mods.rnprtk) this.duration += 6;
@@ -760,7 +741,7 @@ effect.fei1.type = 3;
 effect.fei1.duration = 60;
 effect.fei1.x = '⇔'; effect.fei1.c = 'magenta'; effect.fei1.b = '#520090';
 effect.fei1.onGive = function (x, y) {
-	if (!this.active) { msg('Your body is fighting against the impurities', 'darkmagenta', null, null, 'grey'); this.power = y }
+	if (!this.active) { msg('Your body is fighting against the impurities', 'darkmagenta', null, null, 'grey', undefined, addDesc); this.power = y }
 	else { this.power += y; this.duration += 30 }
 }
 effect.fei1.use = function (y) {
@@ -777,7 +758,7 @@ effect.cold.type = 5;
 effect.cold.duration = 5;
 effect.cold.x = '冷'; effect.cold.c = '#88a'; effect.cold.b = '#eef';
 effect.cold.mods = function () { you.agle /= 1.1; you.stre /= 1.1; you.hpe /= 1.1; you.sate /= 1.05 }
-effect.cold.onGive = function () { if (this.target.id === you.id) msg('You feel colder', 'blue', null, null, 'cyan'); };
+effect.cold.onGive = function () { if (this.target.id === you.id) msg('You feel colder', 'blue', null, null, 'cyan', undefined, addDesc); };
 effect.cold.onRemove = function () { if (this.target.id === you.id) msg('You\'re warming up', 'orange'); };
 effect.cold.use = function () {
 	if (this.target.id === you.id) {
@@ -815,7 +796,7 @@ effect.fbite.type = 5;
 effect.fbite.duration = 5;
 effect.fbite.x = '凍'; effect.fbite.c = 'red'; effect.fbite.b = '#aaf';
 effect.fbite.mods = function () { you.agle /= 1.15; you.stre /= 1.2; you.hpe /= 1.2; you.sate /= 1.1 }
-effect.fbite.onGive = function () { if (this.target.id === you.id) msg('Sharp pain stings you', 'red', null, null, 'cyan') };
+effect.fbite.onGive = function () { if (this.target.id === you.id) msg('Sharp pain stings you', 'red', null, null, 'cyan', undefined, addDesc) };
 effect.fbite.onRemove = function () { if (this.target.id === you.id) { msg('You aren\'t freezing anymore', 'orange'); global.stat.coldnt = 0 } };
 effect.fbite.use = function () {
 	if (this.target.id === you.id) {
@@ -1084,7 +1065,7 @@ quest.lmfstkil1.goalsf = function () {
 ////////////////////////////////////////////
 
 function giveQst(q) {
-	if (!q.data.started) { q.init(); q.data.started = true; msg((q.repeatable ? '<span style="color:cyan">Repeatable</span> q' : 'Q') + 'uest accepted: ' + '<span style="color:orange">"' + q.name + '"</span>', 'lightblue', q, 8); let have = false; for (let a in qsts) if (qsts[a].id === q.id) { have = true; break } if (!have) qsts.push(q); }
+	if (!q.data.started) { q.init(); q.data.started = true; msg((q.repeatable ? '<span style="color:cyan">Repeatable</span> q' : 'Q') + 'uest accepted: ' + '<span style="color:orange">"' + q.name + '"</span>', 'lightblue', q, 8, undefined, undefined, addDesc); let have = false; for (let a in qsts) if (qsts[a].id === q.id) { have = true; break } if (!have) qsts.push(q); }
 }
 
 function finishQst(q) {
@@ -1115,14 +1096,14 @@ skl.fgt.name = 'Fighting';
 skl.fgt.desc = 'Ability to perform better in a fight' + dom.dseparator + '<small style="color:darkorange">Slightly increases overall attack power</small>';
 skl.fgt.use = function (x, y) { return you.str * (this.lvl * .02) }
 skl.fgt.mlstn = [{ lv: 2, f: () => { you.exp_t += 0.02; you.stat_r(); }, g: false, p: "EXP Gain +2%" },
-{ lv: 5, f: () => { you.stra += 1; you.stat_r(); giveTitle(ttl.cvl) }, g: false, p: "STR +1, New Title" },
+	{ lv: 5, f: () => { you.stra += 1; you.stat_r(); giveTitle(ttl.cvl, undefined, undefined, you) }, g: false, p: "STR +1, New Title" },
 { lv: 8, f: () => { you.exp_t += 0.02; you.stat_r() }, g: false, p: "EXP Gain +3%" },
-{ lv: 10, f: () => { you.exp_t += 0.05; you.mods.sbonus += 0.01; you.stat_r(); giveTitle(ttl.tcvl) }, g: false, p: "EXP Gain +5%, Energy Effectiveness +1%, New Title" },
+	{ lv: 10, f: () => { you.exp_t += 0.05; you.mods.sbonus += 0.01; you.stat_r(); giveTitle(ttl.tcvl, undefined, undefined, you) }, g: false, p: "EXP Gain +5%, Energy Effectiveness +1%, New Title" },
 { lv: 11, f: function () { skl.unc.p += .1; skl.srdc.p += .1; skl.knfc.p += .1; skl.axc.p += .1; skl.plrmc.p += .1; skl.stfc.p += .1; skl.bwc.p += .1; skl.hmrc.p += .1; }, g: false, p: "All Masteries EXP Gain +10%" },
-{ lv: 12, f: () => { giveTitle(ttl.fgt); you.stra += 1; skl.war.p += .05; you.stat_r() }, g: false, p: "STR +1, War EXP Gain +5%, New Title" },
+	{ lv: 12, f: () => { giveTitle(ttl.fgt, undefined, undefined, you); you.stra += 1; skl.war.p += .05; you.stat_r() }, g: false, p: "STR +1, War EXP Gain +5%, New Title" },
 { lv: 13, f: () => { you.agla += 2; you.stat_r() }, g: false, p: "AGL +2" },
 { lv: 14, f: () => { you.exp_t += 0.06; }, g: false, p: "EXP Gain +6%" },
-{ lv: 15, f: () => { you.exp_t += 0.08; skl.unc.p += .1; skl.srdc.p += .1; skl.knfc.p += .1; skl.axc.p += .1; skl.plrmc.p += .1; skl.stfc.p += .1; skl.bwc.p += .1; skl.hmrc.p += .1; giveTitle(ttl.rok) }, g: false, p: "EXP Gain +8%, All Masteries EXP Gain +10%, New Title" },
+	{ lv: 15, f: () => { you.exp_t += 0.08; skl.unc.p += .1; skl.srdc.p += .1; skl.knfc.p += .1; skl.axc.p += .1; skl.plrmc.p += .1; skl.stfc.p += .1; skl.bwc.p += .1; skl.hmrc.p += .1; giveTitle(ttl.rok, undefined, undefined, you) }, g: false, p: "EXP Gain +8%, All Masteries EXP Gain +10%, New Title" },
 ];
 
 
@@ -1132,9 +1113,9 @@ skl.unc.bname = 'Unarmed Mastery';
 skl.unc.desc = 'Mastery of unarmed combat' + dom.dseparator + '<small style="color:darkorange">Slightly increases attack power when fighting unarmed</small>';
 skl.unc.use = function (x, y) { you.str += you.str / 100 * (this.lvl * 6); }
 skl.unc.mlstn = [{ lv: 2, f: () => { you.stra += 1; you.stat_r(); }, g: false, p: "STR +1" },
-{ lv: 5, f: () => { you.agla += 1; you.stat_r(); giveTitle(ttl.pbg) }, g: false, p: "AGL +1, New Title" },
+	{ lv: 5, f: () => { you.agla += 1; you.stat_r(); giveTitle(ttl.pbg, undefined, undefined, you) }, g: false, p: "AGL +1, New Title" },
 { lv: 8, f: () => { you.exp_t += 0.01; you.stat_r() }, g: false, p: "EXP Gain +1%" },
-{ lv: 10, f: () => { you.exp_t += 0.05; you.mods.sbonus += 0.02; you.stat_r(); giveTitle(ttl.bll) }, g: false, p: "EXP Gain +5%, Energy Effectiveness +2%, New Title" },
+	{ lv: 10, f: () => { you.exp_t += 0.05; you.mods.sbonus += 0.02; you.stat_r(); giveTitle(ttl.bll, undefined, undefined, you) }, g: false, p: "EXP Gain +5%, Energy Effectiveness +2%, New Title" },
 { lv: 11, f: () => { skl.fgt.p += .03; you.stat_r(); }, g: false, p: "Fighting EXP Gain +3%" },
 ];
 skl.srdc = new Skill(); skl.srdc.id = 103; skl.srdc.type = 1;
@@ -1144,9 +1125,9 @@ skl.srdc.desc = 'Ability to fight using swords' + dom.dseparator + '<small style
 skl.srdc.use = function (x, y) { you.str += you.str / 100 * (this.lvl * 5); }
 skl.srdc.mlstn = [{ lv: 1, f: () => { you.stra += 1; you.stat_r(); }, g: false, p: "STR +1" },
 { lv: 3, f: () => { you.agla += 1; you.stat_r(); }, g: false, p: "AGL +1" },
-{ lv: 5, f: () => { you.stra += 1; you.agla += 1; you.stat_r(); giveTitle(ttl.srd1) }, g: false, p: "STR +1, AGL +1, New Title" },
+	{ lv: 5, f: () => { you.stra += 1; you.agla += 1; you.stat_r(); giveTitle(ttl.srd1, undefined, undefined, you) }, g: false, p: "STR +1, AGL +1, New Title" },
 { lv: 8, f: () => { you.exp_t += 0.03; you.stat_r() }, g: false, p: "EXP Gain +3%" },
-{ lv: 10, f: () => { you.exp_t += 0.05; you.mods.sbonus += 0.01; you.stat_r(); giveTitle(ttl.srd2) }, g: false, p: "EXP Gain +5%, Energy Effectiveness +1%, New Title" },
+	{ lv: 10, f: () => { you.exp_t += 0.05; you.mods.sbonus += 0.01; you.stat_r(); giveTitle(ttl.srd2, undefined, undefined, you) }, g: false, p: "EXP Gain +5%, Energy Effectiveness +1%, New Title" },
 { lv: 11, f: () => { skl.fgt.p += .03; you.stat_r(); }, g: false, p: "Fighting EXP Gain +3%" },
 ];
 
@@ -1157,9 +1138,9 @@ skl.knfc.desc = 'Ability to fight using knives and daggers' + dom.dseparator + '
 skl.knfc.use = function (x, y) { you.str += you.str / 100 * (this.lvl * 5); }
 skl.knfc.mlstn = [{ lv: 2, f: () => { you.agla += 1; you.stat_r(); }, g: false, p: "AGL +1" },
 { lv: 3, f: () => { you.exp_t += 0.01; you.agla += 2; you.stat_r(); }, g: false, p: "AGL +2, EXP Gain +1%" },
-{ lv: 5, f: () => { you.stra += 1; you.stat_r(); giveTitle(ttl.plm) }, g: false, p: "STR +1, New Title" },
+	{ lv: 5, f: () => { you.stra += 1; you.stat_r(); giveTitle(ttl.plm, undefined, undefined, you) }, g: false, p: "STR +1, New Title" },
 { lv: 8, f: () => { you.stra += 1; you.agla += 1; you.exp_t += 0.02; }, g: false, p: "AGL +1, STR +1, EXP Gain +2%" },
-{ lv: 10, f: () => { you.mods.cpwr += .1; giveTitle(ttl.knf) }, g: false, p: "Critical Damage +10%, New Title" },
+	{ lv: 10, f: () => { you.mods.cpwr += .1; giveTitle(ttl.knf, undefined, undefined, you) }, g: false, p: "Critical Damage +10%, New Title" },
 { lv: 11, f: () => { skl.fgt.p += .03; you.stat_r(); }, g: false, p: "Fighting EXP Gain +3%" },
 ];
 
@@ -1170,9 +1151,9 @@ skl.axc.desc = 'Ability to fight using axes' + dom.dseparator + '<small style="c
 skl.axc.use = function (x, y) { you.str += you.str / 100 * (this.lvl * 5); }
 skl.axc.mlstn = [{ lv: 2, f: () => { you.stra += 1; you.stat_r(); }, g: false, p: "STR +1" },
 { lv: 3, f: () => { you.exp_t += 0.02; you.stra += 1; you.stat_r(); }, g: false, p: "STR +1, EXP Gain +2%" },
-{ lv: 5, f: () => { you.hpa += 30; you.ccls[2] += 1; you.stat_r(); giveTitle(ttl.axc1) }, g: false, p: "HP +30, Blunt DEF +1, New Title" },
+	{ lv: 5, f: () => { you.hpa += 30; you.ccls[2] += 1; you.stat_r(); giveTitle(ttl.axc1, undefined, undefined, you) }, g: false, p: "HP +30, Blunt DEF +1, New Title" },
 { lv: 8, f: () => { you.stra += 1; you.agla += 1; you.exp_t += 0.02; you.stat_r() }, g: false, p: "AGL +1, STR +1, EXP Gain +2%" },
-{ lv: 10, f: () => { you.mods.sbonus += 0.02; you.stat_p[1] += .05; giveTitle(ttl.axc2) }, g: false, p: "Energy Effectiveness +2%, STR training Potential +5%, New Title" },
+	{ lv: 10, f: () => { you.mods.sbonus += 0.02; you.stat_p[1] += .05; giveTitle(ttl.axc2, undefined, undefined, you) }, g: false, p: "Energy Effectiveness +2%, STR training Potential +5%, New Title" },
 { lv: 11, f: () => { skl.fgt.p += .03; you.stat_r(); }, g: false, p: "Fighting EXP Gain +3%" },
 ];
 
@@ -1183,9 +1164,9 @@ skl.plrmc.desc = 'Ability to fight using polearms and lances' + dom.dseparator +
 skl.plrmc.use = function (x, y) { you.str += you.str / 100 * (this.lvl * 5); }
 skl.plrmc.mlstn = [{ lv: 2, f: () => { you.agla += 1; you.stat_r(); }, g: false, p: "AGL +1" },
 { lv: 3, f: () => { you.exp_t += 0.01; you.agla += 1; you.stat_r(); }, g: false, p: "AGL +1, EXP Gain +1%" },
-{ lv: 5, f: () => { you.stra += 1; you.ccls[1] += 1; you.stat_r(); giveTitle(ttl.lnc1) }, g: false, p: "STR +1, Pierce DEF +1, New Title" },
+	{ lv: 5, f: () => { you.stra += 1; you.ccls[1] += 1; you.stat_r(); giveTitle(ttl.lnc1, undefined, undefined, you) }, g: false, p: "STR +1, Pierce DEF +1, New Title" },
 { lv: 8, f: () => { you.stra += 2; you.exp_t += 0.03; you.stat_r() }, g: false, p: "STR +2, EXP Gain +3%" },
-{ lv: 10, f: () => { you.res.ph += .01; giveTitle(ttl.lnc2) }, g: false, p: "Physical Resistance +1%, New Title" },
+	{ lv: 10, f: () => { you.res.ph += .01; giveTitle(ttl.lnc2, undefined, undefined, you) }, g: false, p: "Physical Resistance +1%, New Title" },
 { lv: 11, f: () => { skl.fgt.p += .03; you.stat_r(); }, g: false, p: "Fighting EXP Gain +3%" },
 ];
 
@@ -1197,9 +1178,9 @@ skl.hmrc.desc = 'Ability to fight using blunt weaponry' + dom.dseparator + '<sma
 skl.hmrc.use = function (x, y) { you.str += you.str / 100 * (this.lvl * 5); }
 skl.hmrc.mlstn = [{ lv: 2, f: () => { you.exp_t += 0.01; you.agla += 1; you.stat_r(); }, g: false, p: "AGL +1, EXP Gain +1%" },
 { lv: 4, f: () => { you.stra += 1; you.stat_r(); }, g: false, p: "STR +1" },
-{ lv: 5, f: () => { you.stra += 1; you.stat_r(); giveTitle(ttl.stk) }, g: false, p: "STR +1, New Title" },
+	{ lv: 5, f: () => { you.stra += 1; you.stat_r(); giveTitle(ttl.stk, undefined, undefined, you) }, g: false, p: "STR +1, New Title" },
 { lv: 8, f: () => { you.stra += 1; you.exp_t += 0.03; you.stat_r() }, g: false, p: "STR +1, EXP Gain +3%" },
-{ lv: 10, f: () => { you.stra += 3; you.exp_t += 0.03; you.stat_r(); giveTitle(ttl.hmr2) }, g: false, p: "STR +3, EXP Gain +3%, New Title" },
+	{ lv: 10, f: () => { you.stra += 3; you.exp_t += 0.03; you.stat_r(); giveTitle(ttl.hmr2, undefined, undefined, you) }, g: false, p: "STR +3, EXP Gain +3%, New Title" },
 { lv: 11, f: () => { skl.fgt.p += .03; you.stat_r(); }, g: false, p: "Fighting EXP Gain +3%" },
 ];
 
@@ -1216,9 +1197,9 @@ skl.shdc.desc = 'Ability to use shields better';
 skl.shdc.use = function (x, y) { giveSkExp(this, x || 1); you.str += you.str / 100 * (this.lvl * 5); you.int += you.int / 100 * (this.lvl * 3); }
 skl.shdc.mlstn = [{ lv: 2, f: () => { you.exp_t += 0.03; skl.painr.p += .01; you.stat_r(); }, g: false, p: "EXP Gain +3%, Pain Resistance EXP Gain +1%" },
 { lv: 4, f: () => { you.hpa += 12; skl.painr.p += .02; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "HP +12, Pain Resistance EXP Gain +2%" },
-{ lv: 5, f: () => { you.stra += 1; you.stat_r(); giveTitle(ttl.sld1); skl.painr.p += .07 }, g: false, p: "STR +1, Pain Resistance EXP Gain +7%, New Title" },
+	{ lv: 5, f: () => { you.stra += 1; you.stat_r(); giveTitle(ttl.sld1, undefined, undefined, you); skl.painr.p += .07 }, g: false, p: "STR +1, Pain Resistance EXP Gain +7%, New Title" },
 { lv: 8, f: () => { you.agla += 2; you.exp_t += 0.05; you.stat_r() }, g: false, p: "AGL +2, EXP Gain +5%" },
-{ lv: 10, f: () => { you.hpa += 30; you.stra += 2; you.agla += 2; you.exp_t += 0.05; you.stat_r(); giveTitle(ttl.sld2) }, g: false, p: "HP +30, STR +2, AGL +2, New Title" },
+	{ lv: 10, f: () => { you.hpa += 30; you.stra += 2; you.agla += 2; you.exp_t += 0.05; you.stat_r(); giveTitle(ttl.sld2, undefined, undefined, you) }, g: false, p: "HP +30, STR +2, AGL +2, New Title" },
 { lv: 11, f: () => { skl.fgt.p += .08; you.stat_r(); }, g: false, p: "Fighting EXP Gain +8%" },
 ];
 
@@ -1228,12 +1209,12 @@ skl.sleep.desc = 'The rest of Body' + dom.dseparator + '<small style="color:dark
 skl.sleep.use = function (x, y) { giveSkExp(this, x.sq || 1); return 5 * this.lvl * x.sq }
 skl.sleep.mlstn = [{ lv: 2, f: () => { you.hpa += 2; you.stat_r(); dom.d5_1_1.update() }, g: false, p: "HP +2" },
 { lv: 4, f: () => { you.hpa += 5; you.stat_r(); dom.d5_1_1.update() }, g: false, p: "HP +5" },
-{ lv: 5, f: () => { skl.ptnc.p += .05; giveTitle(ttl.slp1); you.hpa += 10; you.stat_r(); dom.d5_1_1.update() }, g: false, p: "HP +10, Patience EXP Gain +5%, New Title" },
+	{ lv: 5, f: () => { skl.ptnc.p += .05; giveTitle(ttl.slp1, undefined, undefined, you); you.hpa += 10; you.stat_r(); dom.d5_1_1.update() }, g: false, p: "HP +10, Patience EXP Gain +5%, New Title" },
 { lv: 6, f: () => { you.hpa += 12; you.stat_r(); dom.d5_1_1.update() }, g: false, p: "HP +12" },
 { lv: 7, f: () => { you.hpa += 15; you.stat_r(); dom.d5_1_1.update() }, g: false, p: "HP +15" },
 { lv: 8, f: () => { you.hpa += 20; you.stat_r(); dom.d5_1_1.update() }, g: false, p: "HP +20" },
 { lv: 9, f: () => { skl.ptnc.p += .1; you.hpa += 25; you.stat_r(); dom.d5_1_1.update() }, g: false, p: "Patience EXP Gain +10%, HP +25" },
-{ lv: 10, f: () => { giveTitle(ttl.slp2); skl.dth.p += .1; you.hpa += 30; you.stat_r(); dom.d5_1_1.update() }, g: false, p: "HP +30, Death EXP Gain +10%, New Title" },
+	{ lv: 10, f: () => { giveTitle(ttl.slp2, undefined, undefined, you); skl.dth.p += .1; you.hpa += 30; you.stat_r(); dom.d5_1_1.update() }, g: false, p: "HP +30, Death EXP Gain +10%, New Title" },
 { lv: 11, f: () => { you.hpa += 35; you.stat_r(); dom.d5_1_1.update() }, g: false, p: "HP +35" },
 { lv: 12, f: () => { you.hpa += 50; you.stat_r(); dom.d5_1_1.update() }, g: false, p: "HP +50" },
 ];
@@ -1243,12 +1224,12 @@ skl.seye.name = 'Sharp Eye';
 skl.seye.desc = 'Ability to notice weak points' + dom.dseparator + '<small style="color:darkorange">Slightly increases critical probability</small>';
 skl.seye.use = function (x, y) { return this.lvl * 0.003 }
 skl.seye.mlstn = [{ lv: 1, f: () => { you.agla += 1; you.stat_r(); }, g: false, p: "AGL +1" },
-{ lv: 3, f: () => { giveTitle(ttl.seye1); you.stra += 1; you.exp_t += 0.04; you.stat_r() }, g: false, p: "STR +1, EXP Gain +4%, New Title" },
+	{ lv: 3, f: () => { giveTitle(ttl.seye1, undefined, undefined, you); you.stra += 1; you.exp_t += 0.04; you.stat_r() }, g: false, p: "STR +1, EXP Gain +4%, New Title" },
 { lv: 4, f: () => { skl.scout.p += .05; you.mods.cpwr += .02; you.exp_t += 0.06; }, g: false, p: "Perception EXP Gain +5%, Critical Damage +2%, EXP Gain +6%" },
-{ lv: 5, f: () => { skl.unc.p += .05; skl.fgt.p += .05; skl.srdc.p += .05; skl.knfc.p += .05; skl.axc.p += .05; skl.plrmc.p += .05; skl.stfc.p += .05; skl.bwc.p += .05; skl.hmrc.p += .05; you.stat_r(); giveTitle(ttl.seye2); }, g: false, p: "All Masteries EXP Gain +5%, Fighting EXP Gain +5%, New Title" },
+	{ lv: 5, f: () => { skl.unc.p += .05; skl.fgt.p += .05; skl.srdc.p += .05; skl.knfc.p += .05; skl.axc.p += .05; skl.plrmc.p += .05; skl.stfc.p += .05; skl.bwc.p += .05; skl.hmrc.p += .05; you.stat_r(); giveTitle(ttl.seye2, undefined, undefined, you); }, g: false, p: "All Masteries EXP Gain +5%, Fighting EXP Gain +5%, New Title" },
 { lv: 6, f: () => { skl.evas.p += .08; you.mods.cpwr += .08; skl.war.p += .07; }, g: false, p: "Evasion EXP Gain +8%, Critical Damage +8%, War EXP Gain +7%" },
 { lv: 7, f: () => { skl.scout.p += .1; you.mods.sbonus += 0.01; you.stra += 2; you.stat_r() }, g: false, p: "EXP Gain +7%, STR +2, Perception EXP Gain +10%, Energy Effectiveness +1%" },
-{ lv: 8, f: () => { you.aff[0] += 5; giveTitle(ttl.seye3) }, g: false, p: "Physical ATK +5, New Title" },
+	{ lv: 8, f: () => { you.aff[0] += 5; giveTitle(ttl.seye3, undefined, undefined, you) }, g: false, p: "Physical ATK +5, New Title" },
 ];
 
 skl.pet = new Skill(); skl.pet.id = 112; skl.pet.type = 10;
@@ -1257,27 +1238,27 @@ skl.pet.desc = 'Mastery of petting animals' + dom.dseparator + '<small style="co
 skl.pet.use = function (x, y) { giveSkExp(this, x || 1); }
 skl.pet.mlstn = [{ lv: 2, f: () => { you.luck += 1; you.stat_r(); }, g: false, p: "LUCK +1" },
 { lv: 4, f: () => { you.agla += 1; you.stat_r(); }, g: false, p: "AGL +1" },
-{ lv: 5, f: () => { you.agla += 1; you.mods.sbonus += 0.01; you.stat_r(); giveTitle(ttl.pet1) }, g: false, p: "Energy Effectiveness +1%, New Title" },
+	{ lv: 5, f: () => { you.agla += 1; you.mods.sbonus += 0.01; you.stat_r(); giveTitle(ttl.pet1, undefined, undefined, you) }, g: false, p: "Energy Effectiveness +1%, New Title" },
 { lv: 6, f: () => { you.hpa += 33; you.stat_r(); dom.d5_1_1.update() }, g: false, p: "HP +33" },
 { lv: 7, f: () => { you.agla += 2; you.stat_r(); }, g: false, p: "AGL +2" },
-{ lv: 8, f: () => { you.exp_t += 0.1; you.cmaff[1] += 3; you.stat_r(); giveTitle(ttl.pet2) }, g: false, p: "EXP Gain +10%, Beast Class DEF +3, New Title" },
+	{ lv: 8, f: () => { you.exp_t += 0.1; you.cmaff[1] += 3; you.stat_r(); giveTitle(ttl.pet2, undefined, undefined, you) }, g: false, p: "EXP Gain +10%, Beast Class DEF +3, New Title" },
 { lv: 9, f: () => { skl.unc.p += .1; }, g: false, p: "Unarmed Mastery EXP gain +10%" },
-{ lv: 10, f: () => { you.inta += 3; giveTitle(ttl.pet3) }, g: false, p: "INT +3, New Title" },
+	{ lv: 10, f: () => { you.inta += 3; giveTitle(ttl.pet3, undefined, undefined, you) }, g: false, p: "INT +3, New Title" },
 ];
 
 skl.walk = new Skill(); skl.walk.id = 113; skl.walk.type = 4;
 skl.walk.name = 'Walking';
 skl.walk.desc = 'Ability to walk';
 skl.walk.use = function (x, y) { giveSkExp(this, .5); }
-skl.walk.mlstn = [{ lv: 1, f: () => { you.agla += 1; you.stat_r(); giveAction(act.demo) }, g: false, p: "AGL +1" },
-{ lv: 3, f: () => { giveTitle(ttl.wlk); you.hpa += 5; you.stat_r() }, g: false, p: "HP +5, New Title" },
+skl.walk.mlstn = [{ lv: 1, f: () => { you.agla += 1; you.stat_r(); giveAction(act.demo, addDesc) }, g: false, p: "AGL +1" },
+	{ lv: 3, f: () => { giveTitle(ttl.wlk, undefined, undefined, you); you.hpa += 5; you.stat_r() }, g: false, p: "HP +5, New Title" },
 { lv: 4, f: () => { you.hpa += 8; you.sata += 6; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "HP +8, SAT +6" },
-{ lv: 5, f: () => { giveTitle(ttl.jgg); you.hpa += 10; you.sata += 8; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "HP +10, SAT +8, New Title" },
+	{ lv: 5, f: () => { giveTitle(ttl.jgg, undefined, undefined, you); you.hpa += 10; you.sata += 8; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "HP +10, SAT +8, New Title" },
 { lv: 6, f: () => { you.exp_t += 0.03; you.hpa += 12; you.stat_r(); you.stat_p[0] += .03; dom.d5_3_1.update() }, g: false, p: "HP +12, EXP Gain +3%, HP Training Potential +3%" },
 { lv: 7, f: () => { skl.tghs.p += .1; you.exp_t += 0.03; you.sata += 10; you.stat_r(); you.stra += 1; you.stat_p[1] += .03; dom.d5_3_1.update() }, g: false, p: "Toughness EXP Gain +10%, STR +1, SAT +10, EXP Gain +3%, STR Training Potential +3%" },
 { lv: 8, f: () => { skl.evas.p += .05; you.exp_t += 0.03; you.hpa += 15; you.stat_r(); you.agla += 2; you.stat_p[2] += .03; dom.d5_3_1.update() }, g: false, p: "Evasion EXP Gain +5%, HP +15, AGL +2, EXP Gain +3%, AGL Training Potential +3%" },
 { lv: 9, f: () => { you.exp_t += 0.06; you.hpa += 8; you.sata += 8; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "HP +8, SAT +8, EXP Gain +6%" },
-{ lv: 10, f: () => { giveTitle(ttl.rnr); you.spda += 1; you.hpa += 10; you.sata += 10; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "HP +10, SAT 10, SPD +1, New Title" },
+	{ lv: 10, f: () => { giveTitle(ttl.rnr, undefined, undefined, you); you.spda += 1; you.hpa += 10; you.sata += 10; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "HP +10, SAT 10, SPD +1, New Title" },
 ];
 
 skl.dice = new Skill(); skl.dice.id = 114; skl.dice.type = 10;
@@ -1295,14 +1276,14 @@ skl.glt.desc = 'Mastery of eating';
 skl.glt.use = function (x, y) { giveSkExp(this, x || 1); return this.lvl || 1 }
 skl.glt.mlstn = [{ lv: 1, f: function () { you.sata += 5; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +5" },
 { lv: 2, f: () => { you.sata += 5; you.hpa += 5; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +5, HP +5" },
-{ lv: 3, f: () => { giveTitle(ttl.eat1); you.sata += 10; you.hpa += 5; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +10, HP +5, New Title" },
+	{ lv: 3, f: () => { giveTitle(ttl.eat1, undefined, undefined, you); you.sata += 10; you.hpa += 5; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +10, HP +5, New Title" },
 { lv: 4, f: () => { skl.fdpnr.p += .05; you.sata += 10; you.hpa += 5; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +10, HP +5, Survival EXP Gain +5%" },
 { lv: 5, f: () => { you.sata += 10; you.hpa += 10; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +10, HP +10" },
 { lv: 6, f: () => { you.sata += 10; you.hpa += 15; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +10, HP +15" },
-{ lv: 7, f: () => { giveTitle(ttl.eat2); you.sata += 10; you.hpa += 20; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +10, HP +20, New Title" },
+	{ lv: 7, f: () => { giveTitle(ttl.eat2, undefined, undefined, you); you.sata += 10; you.hpa += 20; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +10, HP +20, New Title" },
 { lv: 8, f: () => { you.sata += 15; you.hpa += 25; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +15, HP +25" },
 { lv: 9, f: () => { skl.fdpnr.p += .15; you.sata += 15; you.hpa += 35; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +15, HP +35, Survival EXP Gain +15%" },
-{ lv: 10, f: () => { you.eqp_t += .13; giveTitle(ttl.eat3); you.sata += 20; you.hpa += 40; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "EXP Gain +13%, SAT +20, HP +40, New Title" },
+	{ lv: 10, f: () => { you.eqp_t += .13; giveTitle(ttl.eat3, undefined, undefined, you); you.sata += 20; you.hpa += 40; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "EXP Gain +13%, SAT +20, HP +40, New Title" },
 { lv: 11, f: () => { you.sata += 25; you.hpa += 50; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +25, HP +50" },
 { lv: 12, f: () => { you.sata += 25; you.hpa += 60; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +25, HP +60" },
 { lv: 13, f: () => { you.sata += 25; you.hpa += 70; you.stat_r(); dom.d5_3_1.update() }, g: false, p: "SAT +25, HP +70" },];
@@ -1312,9 +1293,9 @@ skl.rdg.name = 'Literacy';
 skl.rdg.desc = 'Understanding of meaning behind texts' + dom.dseparator + '<small style="color:darkorange">Improves reading speed</small>';
 skl.rdg.use = function (x, y) { return this.lvl }
 skl.rdg.mlstn = [{ lv: 2, f: () => { you.inta += 1; you.stat_r(); }, g: false, p: "INT +1" },
-{ lv: 3, f: () => { giveTitle(ttl.ilt); you.exp_t += 0.02; you.stat_r(); }, g: false, p: "EXP Gain +2%, New Title" },
+	{ lv: 3, f: () => { giveTitle(ttl.ilt, undefined, undefined, you); you.exp_t += 0.02; you.stat_r(); }, g: false, p: "EXP Gain +2%, New Title" },
 { lv: 4, f: () => { you.exp_t += 0.02; you.inta += 1; you.stat_r(); }, g: false, p: "INT +1, EXP Gain +2%" },
-{ lv: 5, f: () => { giveTitle(ttl.und); you.inta += 1; you.exp_t += 0.03; you.stat_r(); }, g: false, p: "EXP Gain +3%, INT +1, New Title" },
+	{ lv: 5, f: () => { giveTitle(ttl.und, undefined, undefined, you); you.inta += 1; you.exp_t += 0.03; you.stat_r(); }, g: false, p: "EXP Gain +3%, INT +1, New Title" },
 ];
 
 skl.cook = new Skill(); skl.cook.id = 117; skl.cook.type = 5;
@@ -1322,7 +1303,7 @@ skl.cook.name = 'Cooking';
 skl.cook.desc = 'The art of Cooking' + dom.dseparator + '<small style="color:darkorange">Reduces chances to cook a failed product</small>';
 skl.cook.use = function (x, y) { giveSkExp(this, x || 1); return this.lvl || 1 }
 skl.cook.mlstn = [{ lv: 1, f: () => { you.inta += 1; you.agla += 1; giveRcp(rcp.rsmt); giveRcp(rcp.segg); you.stat_r(); }, g: false, p: "INT +1, AGL +1" },
-{ lv: 2, f: () => { giveTitle(ttl.coo1); giveRcp(rcp.bcrc); giveRcp(rcp.bcrrt); you.exp_t += 0.05; you.stra += 1; you.stat_r(); }, g: false, p: "STR +1, EXP Gain +5%, New Title" },
+	{ lv: 2, f: () => { giveTitle(ttl.coo1, undefined, undefined, you); giveRcp(rcp.bcrc); giveRcp(rcp.bcrrt); you.exp_t += 0.05; you.stra += 1; you.stat_r(); }, g: false, p: "STR +1, EXP Gain +5%, New Title" },
 	//              {lv:3,f:()=>{you.exp_t+=0.02;you.inta+=1;you.stat_r();},g:false,p:"INT +1, EXP Gain +2%"},
 	//              {lv:4,f:()=>{giveTitle(ttl.cck);you.inta+=1;you.exp_t+=0.03;you.stat_r();},g:false,p:"EXP Gain +3%, INT +1, New Title"},
 ];
@@ -1375,9 +1356,9 @@ skl.dngs.desc = 'Ability to detect and avoid danger' + dom.dseparator + '<small 
 skl.dngs.use = function (x, y) { return this.lvl }
 skl.dngs.mlstn = [{ lv: 1, f: () => { you.exp_t += 0.03 }, g: false, p: "EXP Gain +3%" },
 { lv: 2, f: () => { you.agla += 1; you.stat_r(); skl.painr.p += .03 }, g: false, p: "AGL +1, Pain Resistance EXP Gain +3%" },
-{ lv: 3, f: () => { giveTitle(ttl.dngs1); skl.fgt.p += .1; }, g: false, p: "Fighting EXP Gain +10%, New Title" },
+	{ lv: 3, f: () => { giveTitle(ttl.dngs1, undefined, undefined, you); skl.fgt.p += .1; }, g: false, p: "Fighting EXP Gain +10%, New Title" },
 { lv: 4, f: () => { skl.evas.p += .1; you.exp_t += 0.05; you.stra += 1; you.stat_r(); }, g: false, p: "EXP Gain +5%, Evasion EXP Gain +10%, STR +1" },
-{ lv: 5, f: () => { giveTitle(ttl.dngs2); skl.seye.p += .1; you.mods.sbonus += 0.01; you.agla += 2; you.stat_r(); }, g: false, p: "AGL +2, Energy Effectiveness +1%, Sharp Eye EXP Gain +10%, New Title" },
+	{ lv: 5, f: () => { giveTitle(ttl.dngs2, undefined, undefined, you); skl.seye.p += .1; you.mods.sbonus += 0.01; you.agla += 2; you.stat_r(); }, g: false, p: "AGL +2, Energy Effectiveness +1%, Sharp Eye EXP Gain +10%, New Title" },
 ];
 
 skl.painr = new Skill(); skl.painr.id = 127; skl.painr.type = 6;
@@ -1386,7 +1367,7 @@ skl.painr.desc = 'Ability to tolerate physical harm' + dom.dseparator + '<small 
 skl.painr.use = function (x, y) { return this.lvl * .004 }
 skl.painr.mlstn = [{ lv: 1, f: () => { you.exp_t += 0.01 }, g: false, p: "EXP Gain +1%" },
 { lv: 3, f: () => { you.exp_t += 0.02; you.agla += 1; you.stat_r(); }, g: false, p: "EXP Gain +2%, AGL +1" },
-{ lv: 5, f: () => { giveTitle(ttl.rspn1); you.stra += 1; you.exp_t += 0.05; you.stat_r(); }, g: false, p: "EXP Gain +5%, STR +1, New Title" },
+	{ lv: 5, f: () => { giveTitle(ttl.rspn1, undefined, undefined, you); you.stra += 1; you.exp_t += 0.05; you.stat_r(); }, g: false, p: "EXP Gain +5%, STR +1, New Title" },
 { lv: 6, f: () => { skl.dngs.p += .1; you.stat_r(); }, g: false, p: "Danger Sense EXP Gain +10%" },
 ];
 
@@ -1401,11 +1382,11 @@ skl.fdpnr.desc = 'Ability to safely digest dangerous food' + dom.dseparator + '<
 skl.fdpnr.use = function (x, y) { return this.lvl * .05 }
 skl.fdpnr.mlstn = [{ lv: 1, f: () => { you.exp_t += 0.03 }, g: false, p: "EXP Gain +3%" },
 { lv: 2, f: () => { you.sata += 15; you.hpa += 30; skl.glt.p += .05; dom.d5_3_1.update(); you.stat_r(); }, g: false, p: "SAT +15, HP +30, Gluttony EXP Gain +5%" },
-{ lv: 3, f: () => { giveTitle(ttl.rfpn1); skl.drka.p += .1;; you.exp_t += 0.05; you.stra += 1; you.stat_r(); }, g: false, p: "EXP Gain +5%, STR +1, Drinking EXP Gain +10%, New Title" },
-{ lv: 5, f: () => { giveTitle(ttl.rfpn2); you.exp_t += 0.07; skl.painr.p += .1; skl.glt.p += .1; }, g: false, p: "EXP Gain +7%, Pain Resistance EXP Gain +10%, Gluttony EXP Gain +10%, New Title" },
+	{ lv: 3, f: () => { giveTitle(ttl.rfpn1, undefined, undefined, you); skl.drka.p += .1;; you.exp_t += 0.05; you.stra += 1; you.stat_r(); }, g: false, p: "EXP Gain +5%, STR +1, Drinking EXP Gain +10%, New Title" },
+	{ lv: 5, f: () => { giveTitle(ttl.rfpn2, undefined, undefined, you); you.exp_t += 0.07; skl.painr.p += .1; skl.glt.p += .1; }, g: false, p: "EXP Gain +7%, Pain Resistance EXP Gain +10%, Gluttony EXP Gain +10%, New Title" },
 { lv: 6, f: () => { skl.rtr.p += .15; you.stra += 2; you.stat_r(); }, g: false, p: "Elusion EXP Gain +15%, STR +2, HP +100" },
 { lv: 7, f: () => { you.exp_t += 0.1; you.stra += 1; skl.poisr.p += .1; skl.glt.p += .15; you.stat_r(); }, g: false, p: "EXP Gain +10%, STR +1, Poison Resistance EXP Gain +10%, Gluttony EXP Gain +15%," },
-{ lv: 8, f: () => { giveTitle(ttl.rfpn3); you.res.ph -= .01; skl.poisr.p += .2; skl.painr.p += .2 }, g: false, p: "Damage Reduction +1%, Pain Resistance EXP Gain +20%, Poison Resistance EXP Gain +20%, New Title" },
+	{ lv: 8, f: () => { giveTitle(ttl.rfpn3, undefined, undefined, you); you.res.ph -= .01; skl.poisr.p += .2; skl.painr.p += .2 }, g: false, p: "Damage Reduction +1%, Pain Resistance EXP Gain +20%, Poison Resistance EXP Gain +20%, New Title" },
 ];
 
 skl.war = new Skill(); skl.war.id = 130; skl.war.type = 3;
@@ -1423,11 +1404,11 @@ skl.dth.name = 'Death';
 skl.dth.desc = 'Ability to cling to your fate' + dom.dseparator + '<small style="color:darkorange">Reduces energy loss on death</small>';
 skl.dth.use = function (x, y) { return this.lvl * .1 }
 skl.dth.mlstn = [{ lv: 1, f: () => { you.hpa += 20; you.stat_r() }, g: false, p: "HP +20" },
-{ lv: 3, f: () => { you.exp_t += .03; skl.painr.p += .05; giveTitle(ttl.dth1); you.stat_r() }, g: false, p: "EXP Gain +3%, Pain Resistance EXP Gain +5%, New Title" },
+	{ lv: 3, f: () => { you.exp_t += .03; skl.painr.p += .05; giveTitle(ttl.dth1, undefined, undefined, you); you.stat_r() }, g: false, p: "EXP Gain +3%, Pain Resistance EXP Gain +5%, New Title" },
 { lv: 5, f: () => { you.eqp_t += .05; skl.tghs.p += .1; you.stat_r() }, g: false, p: "EXP Gain +5%, Toughness EXP Gain +10%" },
-{ lv: 7, f: () => { skl.dngs.p += .15; you.stra += 2; giveTitle(ttl.dth2); you.stat_r() }, g: false, p: "STR +2, Danger Sense EXP Gain +15%, New Title" },
+	{ lv: 7, f: () => { skl.dngs.p += .15; you.stra += 2; giveTitle(ttl.dth2, undefined, undefined, you); you.stat_r() }, g: false, p: "STR +2, Danger Sense EXP Gain +15%, New Title" },
 { lv: 9, f: () => { skl.painr.p += .1; you.sata += 15;; you.stat_r() }, g: false, p: "SAT +15, Pain Resistance EXP Gain +10%, New Title" },
-{ lv: 10, f: () => { skl.fdpnr.p += .1; skl.dngs.p += .15; you.stra += 2; giveTitle(ttl.dth3); you.stat_r() }, g: false, p: "Survival EXP Gain +10%, , New Title" },
+	{ lv: 10, f: () => { skl.fdpnr.p += .1; skl.dngs.p += .15; you.stra += 2; giveTitle(ttl.dth3, undefined, undefined, you); you.stat_r() }, g: false, p: "Survival EXP Gain +10%, , New Title" },
 ];
 
 skl.rtr = new Skill(); skl.rtr.id = 133; skl.rtr.type = 3;
@@ -1440,11 +1421,11 @@ skl.fmn.name = 'Famine';
 skl.fmn.desc = 'Ability to go by without any sustenance' + dom.dseparator + '<small style="color:darkorange">Increases lower energy effectiveness bonus</small>';
 skl.fmn.use = function (x, y) { return this.lvl * .01 }
 skl.fmn.mlstn = [{ lv: 1, f: () => { you.exp_t += 0.01 }, g: false, p: "EXP Gain +1%" },
-{ lv: 3, f: () => { you.sata += 5; you.hpa += 5; skl.glt.p += .03; giveTitle(ttl.fmn1); dom.d5_3_1.update(); you.stat_r(); }, g: false, p: "SAT +5, HP +5, Gluttony EXP Gain +3%, New Title" },
+	{ lv: 3, f: () => { you.sata += 5; you.hpa += 5; skl.glt.p += .03; giveTitle(ttl.fmn1, undefined, undefined, you); dom.d5_3_1.update(); you.stat_r(); }, g: false, p: "SAT +5, HP +5, Gluttony EXP Gain +3%, New Title" },
 { lv: 5, f: () => { you.stra++; skl.tghs.p += .03; dom.d5_3_1.update(); you.stat_r(); }, g: false, p: "STR +1, Toughness EXP Gain +3%" },
-{ lv: 7, f: () => { you.agla += 2; skl.fdpnr.p += .15; you.hpa += 15; giveTitle(ttl.fmn2); dom.d5_3_1.update(); you.stat_r(); }, g: false, p: "AGL +2, HP +15, Survival EXP Gain +15%, New Title" },
+	{ lv: 7, f: () => { you.agla += 2; skl.fdpnr.p += .15; you.hpa += 15; giveTitle(ttl.fmn2, undefined, undefined, you); dom.d5_3_1.update(); you.stat_r(); }, g: false, p: "AGL +2, HP +15, Survival EXP Gain +15%, New Title" },
 { lv: 9, f: () => { you.sata += 10; skl.glt.p += .07; skl.dth.p += .05; dom.d5_3_1.update(); you.stat_r(); }, g: false, p: "SAT +10, Death EXP Gain +5%, Gluttony EXP Gain +7%" },
-{ lv: 10, f: () => { giveTitle(ttl.fmn3); dom.d5_3_1.update(); you.stat_r(); }, g: false, p: ", New Title" },
+	{ lv: 10, f: () => { giveTitle(ttl.fmn3, undefined, undefined, you); dom.d5_3_1.update(); you.stat_r(); }, g: false, p: ", New Title" },
 ];
 
 skl.abw = new Skill(); skl.abw.id = 135; skl.abw.type = 7;
@@ -1833,7 +1814,7 @@ item.svial1.use = function () {
 		ta.name = 'Somewhere';
 		ta.pop = [{ crt: creature.skl, lvlmin: 10, lvlmax: 10, c: 1 }]; ta.protected = true;
 		ta.onEnd = function () { area_init(area.nwh); global.flags.civil = true; global.flags.btl = false; }; global.flags.civil = false; global.flags.btl = true;
-		ta.size = 1; z_bake(ta); area_init(ta); dom.d7m.update(); msg('The creature arises from the ground!', 'white', null, null, 'red')
+		ta.size = 1; z_bake(ta); area_init(ta); dom.d7m.update(); msg('The creature arises from the ground!', 'white', null, null, 'red', undefined, addDesc)
 		this.amount--;
 	} else msg('You\'re already in a battle!', 'red')
 }
@@ -1844,7 +1825,7 @@ item.mpwdr.desc = 'Dried and grounded sunbloom mixed with red salts, it emits au
 item.mpwdr.stype = 4;
 item.mpwdr.use = function () {
 	if (global.current_z.protected || global.current_z.id <= 101 || global.current_z.size <= 1) { msg('Unable to use it here!', 'red'); return }
-	msg('You spread some powder on the ground', 'lime', null, null, 'brown')
+	msg('You spread some powder on the ground', 'lime', null, null, 'brown', undefined, addDesc)
 	global.current_z.size += 5; dom.d7m.update();
 	this.amount--;
 }
@@ -4434,7 +4415,7 @@ item.coal2.name = 'Charcoal';
 item.coal2.desc = 'Coal made from carefuly burning quality wood for lengths of time. This coal cinders for a very long time';
 item.coal2.stype = 5;
 item.coal2.use = function () {
-	msg('Your hands get all dirty', 'black', null, null, 'lightgrey');
+	msg('Your hands get all dirty', 'black', null, null, 'lightgrey', undefined, addDesc);
 }
 
 item.cndl2 = new Item(); item.cndl2.id = 5032;
@@ -4446,7 +4427,7 @@ item.skl.name = 'Skull';
 item.skl.desc = 'Mostly undamaged human skull, taken from some unlucky corpse. It is used in various ways by all sorts of dark sorcerers, witches and alchemists';
 item.skl.stype = 5;
 item.skl.use = function () {
-	msg('It looks menacing', 'purple', null, null, 'lightgrey');
+	msg('It looks menacing', 'purple', null, null, 'lightgrey', undefined, addDesc);
 }
 
 global.text.kntsct = ['Adjustable bend', 'Adjustable grip hitch', 'Albright special', 'Alpine Butterfly', 'Anchor bend', 'Angle\'s loop ', 'Arbor knot', 'Artillery loop', 'Ashley\'s bend', 'Axle hitch', 'Bachmann knot', 'Bag knot', 'Bait loop', 'Barrel knot', 'Basket weave knot', 'Becket hitch ', 'Beer knot', 'Bimini twist', 'Blackwall hitch', 'Blake\'s hitch', 'Blood knot', 'Boa knot', 'Boling knot', 'Boom hitch', 'Bourchier knot', 'Heraldic knot', 'Bumper knot', 'Bunny ears', 'Butterfly loop', 'Carrick bend', 'Cat\'s paw', 'Catshank', 'Celtic button knot', 'Chain sinnet', 'Chair knot', 'Clove hitch', 'Constrictor knot', 'Cow hitch', 'Crown knot', 'Double loop', 'Dogshank', 'Diamond knot', 'Dropper loop', 'Death knot', 'Eye splice', 'Falconer\'s knot', 'Farmer\'s loop', 'Fiador knot', 'Figure-eight knot', 'Fisherman\'s bend', 'Friendship knot', 'Hackamore', 'Garda hitch', 'Grief knot', 'Gordian knot', 'Grantchester knot', 'Ground-line hitch', 'Gripping sailor\'s hitch', 'Halter hitch', 'Handcuff knot', 'Hangman\'s noose', 'Highpoint hitch', 'Highwayman\'s hitch', 'Hitching tie', 'Hunter\'s bend', 'Icicle hitch', 'Jamming knot', 'Killick hitch', 'Klemheist knot', 'Knot of isis', 'Lariat loop', 'Lighterman\'s hitch', 'Lineman\s loop', 'Lissajous knot', 'Lobster buoy hitch', 'Magnus hitch', 'Marlinespike hitch', 'Midshipman\'s hitch', 'Miller\'s knot', 'Monkey\'s fist', 'Mountaineer\'s coil', 'Munter hitch', 'Nail knot', 'Ossel hitch', 'Overhand bend', 'Palomar knot', 'Pile hitch', 'Pipe hitch', 'Pretzel link knot', 'Power cinch', 'Racking bend', 'Reef knot', 'Reever Knot', 'Rolling hitch', 'Round turn', 'Running bowline', 'Sailor\'s hitch', 'Sheepshank', 'Shoelace knot', 'Simple knot', 'Slip knot', 'Snell knot', 'Snuggle hitch', 'Span loop', 'Square knot', 'Strangle knot', 'Surgeon\'s loop', 'Tape knot', 'Thief knot', 'Transom knot', 'Thumb knot', 'Threefoil knot', 'Trident loop', 'Trilene knot', 'Triple crown knot', 'True lover\'s knot', 'Turle knot', 'Versatackle knot', 'Underhand knot', 'Underwriter\'s knot', 'Uni knot', 'Wall and crown knot', 'Water knot', 'Windsor knot', 'Yosemite bowlin', 'Zeppelin bend']
@@ -4476,7 +4457,7 @@ item.stdst.name = 'Stardust';
 item.stdst.desc = 'Tiny bits of solar pieces that came from the Sky. They shine in darkness and hold the energy of stars';
 item.stdst.stype = 5;
 item.stdst.use = function (x) {
-	msg('It is glittering', 'gold', null, null, 'darkblue');
+	msg('It is glittering', 'gold', null, null, 'darkblue', undefined, addDesc);
 }
 
 item.gcre1 = new Item(); item.gcre1.id = 5037;
@@ -6790,129 +6771,45 @@ global.rdrop = [ // g f e
 	[], [], [], []];
 global.achchk = [//1 - you die, 2 - enemy dies
 	[
-		function (x) { if (ttl.ddw.have === false) { if ((x.id === 103 || x.id === 102) && x.lvl === 1) { giveTitle(ttl.ddw) } } }
+		function (x) { if (ttl.ddw.have === false) { if ((x.id === 103 || x.id === 102) && x.lvl === 1) { giveTitle(ttl.ddw, undefined, undefined, you) } } }
 	],
 	[
-		function (x) { if (ttl.kill1.have === false) { if (global.stat.akills >= 10000) { giveTitle(ttl.kill1) } } },
-		function (x) { if (ttl.kill2.have === false) { if (global.stat.akills >= 50000) { giveTitle(ttl.kill2) } } },
-		function (x) { if (ttl.kill3.have === false) { if (global.stat.akills >= 200000) { giveTitle(ttl.kill3) } } },
-		function (x) { if (ttl.kill4.have === false) { if (global.stat.akills >= 1000000) { giveTitle(ttl.kill4) } } },
-		function (x) { if (ttl.kill5.have === false) { if (global.stat.akills >= 5000000) { giveTitle(ttl.kill5) } } },
+		function (x) { if (ttl.kill1.have === false) { if (global.stat.akills >= 10000) { giveTitle(ttl.kill1, undefined, undefined, you) } } },
+		function (x) { if (ttl.kill2.have === false) { if (global.stat.akills >= 50000) { giveTitle(ttl.kill2, undefined, undefined, you) } } },
+		function (x) { if (ttl.kill3.have === false) { if (global.stat.akills >= 200000) { giveTitle(ttl.kill3, undefined, undefined, you) } } },
+		function (x) { if (ttl.kill4.have === false) { if (global.stat.akills >= 1000000) { giveTitle(ttl.kill4, undefined, undefined, you) } } },
+		function (x) { if (ttl.kill5.have === false) { if (global.stat.akills >= 5000000) { giveTitle(ttl.kill5, undefined, undefined, you) } } },
 	]
 ];
 global.monchk = [
-	function (x) { if (ttl.mone1.have === false) { if (global.stat.moneyg >= GOLD) { giveTitle(ttl.mone1) } } },
+	function (x) { if (ttl.mone1.have === false) { if (global.stat.moneyg >= GOLD) { giveTitle(ttl.mone1, undefined, undefined, you) } } },
 	//  function(x){if(ttl.mone2.have===false){if(global.stat.moneyg>=GOLD){giveTitle(ttl.mone2)}}},
 	//  function(x){if(ttl.mone3.have===false){if(global.stat.moneyg>=GOLD){giveTitle(ttl.mone3)}}},
 ];
 global.ttlschk = [
-	function (x) { if (ttl.ttsttl1.have === false) { if (global.titles.length >= 10) { giveTitle(ttl.ttsttl1) } } },
-	function (x) { if (ttl.ttsttl2.have === false) { if (global.titles.length >= 25) { giveTitle(ttl.ttsttl2) } } },
-	function (x) { if (ttl.ttsttl3.have === false) { if (global.titles.length >= 50) { giveTitle(ttl.ttsttl3) } } },
+	function (x) { if (ttl.ttsttl1.have === false) { if (global.titles.length >= 10) { giveTitle(ttl.ttsttl1, undefined, undefined, you) } } },
+	function (x) { if (ttl.ttsttl2.have === false) { if (global.titles.length >= 25) { giveTitle(ttl.ttsttl2, undefined, undefined, you) } } },
+	function (x) { if (ttl.ttsttl3.have === false) { if (global.titles.length >= 50) { giveTitle(ttl.ttsttl3, undefined, undefined, you) } } },
 ];
 
 global.shptchk = [
-	function (x) { if (ttl.shpt1.have === false) { if (global.stat.buyt >= 500) { giveTitle(ttl.shpt1) } } },
+	function (x) { if (ttl.shpt1.have === false) { if (global.stat.buyt >= 500) { giveTitle(ttl.shpt1, undefined, undefined, you) } } },
 	//  function(x){if(ttl.shpt2.have===false){if(global.stat.buyt>=5000){giveTitle(ttl.shpt2)}}},
 	//  function(x){if(ttl.shpt3.have===false){if(global.stat.buyt>=10000){giveTitle(ttl.shpt3)}}},
 ];
 global.cptchk = [
-	function (x) { if (ttl.cpet1.have === false) { if (global.stat.cat_c >= 9999) { giveTitle(ttl.cpet1) } } },
+	function (x) { if (ttl.cpet1.have === false) { if (global.stat.cat_c >= 9999) { giveTitle(ttl.cpet1, undefined, undefined, you) } } },
 ];
 global.htrchl = [
-	function (x) { if (ttl.hstr1.have === false) { if (x >= 100) { giveTitle(ttl.hstr1) } } },
-	function (x) { if (ttl.hstr2.have === false) { if (x >= 250) { giveTitle(ttl.hstr2) } } },
-	function (x) { if (ttl.hstr3.have === false) { if (x >= 500) { giveTitle(ttl.hstr3) } } },
+	function (x) { if (ttl.hstr1.have === false) { if (x >= 100) { giveTitle(ttl.hstr1, undefined, undefined, you) } } },
+	function (x) { if (ttl.hstr2.have === false) { if (x >= 250) { giveTitle(ttl.hstr2, undefined, undefined, you) } } },
+	function (x) { if (ttl.hstr3.have === false) { if (x >= 500) { giveTitle(ttl.hstr3, undefined, undefined, you) } } },
 ];
 global.nethmchk = [
-	function (x) { if (ttl.neet.have === false) { if (global.stat.athmec >= YEAR) { giveTitle(ttl.neet) } } },
-	function (x) { if (ttl.neet2.have === false) { if (global.stat.athmec >= YEAR * 5) { giveTitle(ttl.neet2) } } },
-	function (x) { if (ttl.neet3.have === false) { if (global.stat.athmec >= YEAR * 10) { giveTitle(ttl.neet3) } } },
+	function (x) { if (ttl.neet.have === false) { if (global.stat.athmec >= YEAR) { giveTitle(ttl.neet, undefined, undefined, you) } } },
+	function (x) { if (ttl.neet2.have === false) { if (global.stat.athmec >= YEAR * 5) { giveTitle(ttl.neet2, undefined, undefined, you) } } },
+	function (x) { if (ttl.neet3.have === false) { if (global.stat.athmec >= YEAR * 10) { giveTitle(ttl.neet3, undefined, undefined, you) } } },
 ];
-
-///////////////////////////////////////////
-//U
-///////////////////////////////////////////
-
-function You() {
-	this.name = 'You';
-	this.title = ttl.new;
-	this.desc = 'This is you';
-	this.id = -1;
-	this.type = 0;
-	this.rank = function () { return Math.ceil(50000000000000 * (1 / (((this.agl + this.str + (you.eqp[0].str) + this.spd + this.int) ** 2) / Math.sqrt((this.agl + this.str + this.int + (this.spd / this.lvl)) * 512 / (this.luck * .1 + 1))))) }; this.rnk = 0;
-	this.lvl = 1;
-	this.exp = 0;
-	this.expnext = function () { return this.lvl * ((this.lvl * 2) ** 2) + (this.lvl ** 2) }; this.expnext_t = this.expnext();
-	this.exp_t = 1;
-	this.efficiency = function () { let g = skl.fmn.use(); g = g >= .6 ? .6 : g; let e = (.8 - g) * this.sat / this.satmax + (.2 + g) + you.mods.sbonus; return e < 0 ? 0 : e }
-	this.mods = { sbonus: 0, sdrate: .1, infsrate: 1, enmondren: 0, enmondrts: 1, ddgmod: 0, rdgrt: 1, cpwr: 1, crflt: 0, wthexrt: 0, tstl: 0, lkdbt: 0, ckfre: 0, rnprtk: 0, light: 0, undc: 0, petxp: .005, stdstps: 1, survinf: 0, runerg: 1 };
-	this.ki = new Object();
-	this.sat = this.satmax = this.sat_r = 200;
-	this.hpmax = 39;
-	this.hp = this.hp_r = 39;
-	this.str = this.str_r = this.agl = this.agl_r = this.int = this.int_r = this.spd = this.spd_r = this.str_d = this.agl_d = this.int_d = 1;
-	this.stra = this.agla = this.inta = this.spda = this.hpa = this.sata = 0; this.strm = this.intm = this.spdm = this.aglm = this.hpm = this.satm = 1
-	this.stat_p = [1, 1, 1, 1];
-	this.res = { poison: 1, burn: 1, frost: 1, paralize: 1, blind: 1, sleep: 1, curse: 1, death: 1, bleed: 1, ph: 1, venom: 1, fpoison: 1 };
-	this.cls = [0, 0, 0];
-	this.ccls = [0, 0, 0];
-	this.aff = [0, 0, 0, 0, 0, 0, 0];
-	this.maff = [0, 0, 0, 0, 0, 0, 0];
-	this.caff = [0, 0, 0, 0, 0, 0, 0];
-	this.cmaff = [0, 0, 0, 0, 0, 0, 0];
-	this.dmlt = 1;
-	this.luck = 1; this.karma = 0;
-	this.crt = .008;
-	this.wealth = 0;
-	this.eva = 0;
-	this.atkmode = 1;
-	this.alive = true;
-	this.eqp = [eqp.dummy, eqp.dummy, eqp.dummy, eqp.dummy, eqp.dummy, eqp.dummy, eqp.dummy, eqp.dummy, eqp.dummy, eqp.dummy];
-	this.eff = [];
-	this.skls = [];
-	this.drop = [{ item: item.death_b, chance: 1 }];
-	this.onDeath = function (killer) {
-		if (you.res.death < 1 && random() >= you.res.death) { msg('You avoid death...', 'lightgrey'); you.hp = Math.ceil(you.hpmax * .1) } else {
-			callback.onDeath.fire(this, killer)
-			this.alive = false; this.hp = 1; if (!killer) killer = creature.default;
-			if (global.current_a.id !== act.default.id) deactivateAct(global.current_a); global.flags.work = false
-			you.sat / you.satmax > .3 ? giveSkExp(skl.dth, killer.rnk * 10 + 1) : giveSkExp(skl.dth, killer.rnk + 1);
-			if (this.sat > 0) this.sat *= (.55 * (1 - skl.dth.use())); giveItem(item.death_b);
-			dom.d5_1_1.update(); global.s_l = 0; global.stat.deadt++;
-			for (let x in global.achchk[0]) global.achchk[0][x](killer);
-			clearInterval(timers.rdng); clearInterval(timers.rdngdots); global.flags.rdng = false; clearInterval(timers.job1t); clearInterval(timers.bstmonupdate)
-			for (let o in this.eff) removeEff(this.eff[o])
-			global.flags.btl = false; global.flags.civil = true; global.current_z.onDeath(); if (sector.home.data.smkp > 0) { smove(chss.lsmain1, false); msg('You ran out of your smoked up house', 'grey') } else smove(chss.hbed, false); global.current_z = area.nwh; dom.hit_c(); dom.d7m.update()
-		}
-	}
-	this.onDeathE = function () { }
-	this.ai = function () { }
-	this.battle_ai = function (x, y, z) { return attack(x, y) }
-	this.stat_r = function () {
-		this.stre = this.inte = this.agle = this.spde = this.sate = this.hpe = 1;
-		for (let idx in this.eff) this.eff[idx].mods();
-		this.str = (this.str_r + this.stra) * this.strm * this.stre; this.str_d = this.str
-		this.int = (this.int_r + this.inta) * this.intm * this.inte; this.int_d = this.int
-		this.agl = (this.agl_r + this.agla) * this.aglm * this.agle; this.agl_d = this.agl
-		this.spd = (this.spd_r + this.spda) * this.spdm * this.spde; this.spd_d = this.spd
-		this.hpmax = Math.ceil((this.hp_r + this.hpa) * this.hpm * this.hpe); this.satmax = Math.ceil((this.sat_r + this.sata) * this.satm * this.sate);
-		this.str_d += this.eqp[0].str;
-		this.dmlt = 1;
-		for (let obj in this.eqp) {
-			this.int_d += this.eqp[obj].int;
-			this.agl_d += this.eqp[obj].agl;
-			this.spd += this.eqp[obj].spd;
-		}
-		for (let idx in this.eff) {
-			if (this.eff[idx].type === 2) { this.eff[idx].un(); this.eff[idx].use(this.eff[idx].y, this.eff[idx].z) };
-		} dom.d6.update(); update_db(); if (you.hp > you.hpmax) you.hp = you.hpmax; dom.d5_1_1.update();
-	}
-} you = new You(); you.eqp[0].ctype = 2; giveTitle(ttl.new, true);
-you.ai = function () {
-	//if(you.hp*100/you.hpmax<50) item.hrb1.use();
-	//if(you.sat*100/you.satmax<90) item.appl.use();
-}
 
 ///////////////////////////////////////////
 //CRT
@@ -7601,7 +7498,7 @@ area.trn = new Area(); area.trn.id = 102;
 area.trn.name = 'Training Grounds';
 area.trn.pop = [{ crt: creature.sdummy, lvlmin: 1, lvlmax: 9, c: .3 }, { crt: creature.tdummy, lvlmin: 4, lvlmax: 8, c: .3 }, { crt: creature.wdummy, lvlmin: 3, lvlmax: 5, c: .3 }];
 area.trn.size = 10000; z_bake(area.trn);
-area.trn.onEnd = function () { this.size = -1; giveTitle(ttl.thr); global.flags.trnex1 = true; smove(chss.t3, false) };
+area.trn.onEnd = function () { this.size = -1; giveTitle(ttl.thr, undefined, undefined, you); global.flags.trnex1 = true; smove(chss.t3, false) };
 area.trn.drop = [{ item: item.appl, c: .02 }, { item: acc.gpin, c: .00012, cond: () => { return ttl.tqtm.tget } }]
 
 area.trnf = new Area(); area.trn.id = 107;
@@ -7715,7 +7612,7 @@ area.trne4 = new Area(); area.trne4.id = 117;
 area.trne4.name = 'Training Grounds';
 area.trne4.pop = [{ crt: creature.golem4, lvlmin: 28, lvlmax: 28, c: 1 }];
 area.trne4.size = 1; z_bake(area.trne4); area.trne4.protected = true
-area.trne4.onEnd = function () { this.size = 1; if (!global.flags.trne4e1) smove(chss.trne4e1, false); else smove(chss.t3, false); giveTitle(ttl.aptc) };
+area.trne4.onEnd = function () { this.size = 1; if (!global.flags.trne4e1) smove(chss.trne4e1, false); else smove(chss.t3, false); giveTitle(ttl.aptc, undefined, undefined, you) };
 
 area.frstn9a1 = new Area(); area.frstn9a1.id = 118;
 area.frstn9a1.name = 'Southern forest hunting area';
@@ -7931,7 +7828,7 @@ rcp.rsmt.name = 'Roasted Meat';
 rcp.rsmt.type = 1;
 rcp.rsmt.rec = [{ item: item.rwmt1, amount: 1 }];
 rcp.rsmt.res = [{ item: item.rsmt, amount: 1 }];
-rcp.rsmt.cmake = function () { let rn = random() + skl.cook.lvl * .1; if (rn >= .30) giveItem(rcp.rsmt.res[0].item); else { giveItem(item.brmt); msg('It didn\'t turn out very well...', 'black', null, null, 'lightgrey'); } giveCrExp(skl.cook, .2, 1); }
+rcp.rsmt.cmake = function () { let rn = random() + skl.cook.lvl * .1; if (rn >= .30) giveItem(rcp.rsmt.res[0].item); else { giveItem(item.brmt); msg('It didn\'t turn out very well...', 'black', null, null, 'lightgrey', undefined, addDesc); } giveCrExp(skl.cook, .2, 1); }
 rcp.rsmt.srect = ['Nearby firesource'];
 rcp.rsmt.srec = [function () { if (you.mods.ckfre > 0) return true }];
 
@@ -8104,7 +8001,7 @@ rcp.brd.name = 'Bread';
 rcp.brd.type = 1;
 rcp.brd.rec = [{ item: item.dgh, amount: 1 }];
 rcp.brd.res = [{ item: item.brd, amount: 1 }];
-rcp.brd.cmake = function () { let rn = random() + skl.cook.lvl * .05; if (rn >= .25) giveItem(rcp.brd.res[0].item); else { giveItem(item.brdb); msg('It didn\'t turn out very well...', 'black', null, null, 'lightgrey'); } giveCrExp(skl.cook, 2, 3) }
+rcp.brd.cmake = function () { let rn = random() + skl.cook.lvl * .05; if (rn >= .25) giveItem(rcp.brd.res[0].item); else { giveItem(item.brdb); msg('It didn\'t turn out very well...', 'black', null, null, 'lightgrey', undefined, addDesc); } giveCrExp(skl.cook, 2, 3) }
 rcp.brd.srect = ['Nearby firesource'];
 rcp.brd.srec = [function () { if (you.mods.ckfre > 0) return true }];
 
@@ -9855,25 +9752,6 @@ function dscr(c, what, type, ttl, dsc, id) {
 	}
 }
 
-function msg(txt, c, dsc, type, bc, chck) {
-	if (global.flags.m_freeze === false && global.flags.loadstate === false) {
-		while (dom.gmsgs.children[1].children.length > global.msgs_max - 1) dom.gmsgs.children[1].removeChild(dom.gmsgs.children[1].children[0]);
-		let msg = addElement(dom.mscont, 'div', null, 'msg');
-		if (global.flags.msgtm) {
-			let now = new Date();
-			let g = addElement(msg, 'small'); g.innerHTML = '[' + (now.getHours() < 10 ? ('0' + now.getHours()) : now.getHours()) + ':' + (now.getMinutes() < 10 ? ('0' + now.getMinutes()) : now.getMinutes()) + ':' + (now.getSeconds() < 10 ? ('0' + now.getSeconds()) : now.getSeconds()) + ']'
-			g.style.backgroundColor = '#242848'; g.style.display = 'flex';
-		}
-		let mtxt = addElement(msg, 'span');
-		if (dsc) { if (type) addDesc(msg, dsc, type); else addDesc(msg, dsc); }
-		//let nt = new String(); for(let a in txt){nt+=txt[a].charCodeAt()!==32?String.fromCharCode(41216-txt[a].charCodeAt()):' '}; txt=nt;
-		if (c) mtxt.innerHTML = '<span style=color:' + c + (bc ? (';background-color:' + bc) : '') + '>' + txt + '</span>';
-		else mtxt.innerHTML = txt; dom.mscont.scrollTop = dom.mscont.scrollHeight; global.lastmsg = msg.innerHTML;
-		//if(true) {if(msg.innerHTML==global.lstmsg) msg.innerHTML=global.lastmsg+'('+(++global.lastmsgc)+')';
-		//  else {global.lastmsg=msg.innerHTML;global.lastmsgc=0;}} else global.lastmsg=msg.innerHTML;
-	}
-}
-
 function _msg(txt, c, dsc, type, bc, chck) {
 	while (dom.gmsgs.children[1].children.length > global.msgs_max - 1) dom.gmsgs.children[1].removeChild(dom.gmsgs.children[1].children[0]);
 	let msg = addElement(dom.mscont, 'div', null, 'msg');
@@ -10526,7 +10404,7 @@ function giveItem(obj, am, ignore, flag) {
 			obj.new = true; obj.data.uid = ++global.uid;
 			let tmp = obj; obj.data.dscv = true; obj.have = true;
 			nitm = copy(obj); nitm.data = deepCopy(obj.data); nitm.eff = tmp.eff; if (tmp.dss) nitm.dss = tmp.dss;
-			inv.push(nitm); msg('New item obtained: <span style="color:coral">' + nitm.name + '</span>', 'cyan', obj); obj.onGet();
+			inv.push(nitm); msg('New item obtained: <span style="color:coral">' + nitm.name + '</span>', 'cyan', obj, undefined, undefined, undefined, addDesc); obj.onGet();
 			if (global.sm === nitm.stype) global.sinv.push(nitm); if (nitm.stype === global.sm || global.sm === 1) renderItem(nitm);
 			let g = obj.id / 10000 << 0; if (!scan(dar[g], obj.id)) dar[g].push(obj.id);
 			if (flag && flag.fl) iftrunkopen(1); else iftrunkopenc(1); if (!global.flags.loadstate && !ignore) global.stat.igtttl += am;
@@ -10542,9 +10420,9 @@ function giveItem(obj, am, ignore, flag) {
 			}, 100)
 		}
 		obj.have = true; obj.data.dscv = true;
-		inv.push(obj); obj.amount += am; msg('New item obtained: <span style="color:coral">' + obj.name + '</span><span style="color:lime"> x' + am + '</span>', 'cyan', obj); obj.onGet();
+		inv.push(obj); obj.amount += am; msg('New item obtained: <span style="color:coral">' + obj.name + '</span><span style="color:lime"> x' + am + '</span>', 'cyan', obj, undefined, undefined, undefined, addDesc); obj.onGet();
 		if (global.sm === obj.stype) global.sinv.push(obj); if (obj.stype === global.sm || global.sm === 1) renderItem(obj);
-	} else { obj.amount += am; msg('Item Acquired: <span style="color:chartreuse">' + obj.name + '</span><span style="color:lime"> x' + am + '</span>', 'cyan', obj); if (global.sm === 1) updateInv(inv.indexOf(obj)); else if (global.sm === obj.stype) updateInv(global.sinv.indexOf(obj)); obj.onGet(); }
+	} else { obj.amount += am; msg('Item Acquired: <span style="color:chartreuse">' + obj.name + '</span><span style="color:lime"> x' + am + '</span>', 'cyan', obj, undefined, undefined, undefined, addDesc); if (global.sm === 1) updateInv(inv.indexOf(obj)); else if (global.sm === obj.stype) updateInv(global.sinv.indexOf(obj)); obj.onGet(); }
 	let g = obj.id / 10000 << 0; if (!scan(dar[g], obj.id)) dar[g].push(obj.id);
 	if (obj.multif) for (let a = 0; a < am; a++) obj.multif()
 	if (obj.rot) {
@@ -10874,6 +10752,8 @@ function recshop() {
 	}
 }
 
+const thankYouForYourPatronage = () => msg('Thank you for your patronage!', 'gold', null, null, 'magenta')
+
 function rendershopitem(root, itm, vnd) {
 	dom.ch_etn = addElement(root, 'div', 'bst_entrh', 'bst_entr'); dom.ch_etn.style.backgroundColor = 'rgb(10,30,54)';
 	addDesc(dom.ch_etn, itm[0]);
@@ -10907,7 +10787,7 @@ function rendershopitem(root, itm, vnd) {
 			if (you.wealth >= p && itm[1] > 0) {
 				itm[1]--; giveItem(itm[0]); spend(p); m_update(); giveSkExp(skl.gred, itm[2] * .05); giveSkExp(skl.trad, itm[2] ** (1 + itm[0].rar * .1) * .05)
 				if (p >= GOLD) mf(-Math.ceil((p - GOLD) / GOLD), 3); if (p >= SILVER) mf(-Math.ceil((p - SILVER) / SILVER % 100), 2); mf(-p % 100, 1); global.stat.buyt++;
-				if (random() < .0008) { giveItem(acc.dticket); msg('Thank you for your patronage!', 'gold', null, null, 'magenta') }; global.stat.shppnt += p * .01; vnd.data.rep += itm[2] * .0004 * vnd.repsc; if (vnd.data.rep > 100) vnd.data.rep = 100
+				if (random() < .0008) { giveItem(acc.dticket); thankYouForYourPatronage() }; global.stat.shppnt += p * .01; vnd.data.rep += itm[2] * .0004 * vnd.repsc; if (vnd.data.rep > 100) vnd.data.rep = 100
 				if (itm[1] === 0) { el.children[2].innerHTML = '<small>sold out</small>'; el.children[2].style.color = el.children[0].children[0].style.color = el.children[1].style.color = 'grey' } else el.children[2].innerHTML = itm[1];
 			} buycbs(itm, vnd)
 		});
@@ -10916,7 +10796,7 @@ function rendershopitem(root, itm, vnd) {
 			if (you.wealth >= p * 5 && itm[1] >= 5) {
 				itm[1] -= 5; giveItem(itm[0], 5); spend(p * 5); m_update(); giveSkExp(skl.gred, itm[2] * 5 * .05); giveSkExp(skl.trad, itm[2] ** (1 + itm[0].rar * .1) * .05 * 5)
 				if (p * 5 >= GOLD) mf(-Math.ceil((p * 5 - GOLD) / GOLD), 3); if (p * 5 >= SILVER) mf(-Math.ceil((p * 5 - SILVER) / SILVER % 100), 2); mf(-p * 5 % 100, 1); global.stat.buyt += 5;
-				if (random() < .004) { giveItem(acc.dticket); msg('Thank you for your patronage!', 'gold', null, null, 'magenta') }; global.stat.shppnt += p * .01; vnd.data.rep += itm[2] * (5 * (1 + .05)) * .0004 * vnd.repsc; if (vnd.data.rep > 100) vnd.data.rep = 100
+				if (random() < .004) { giveItem(acc.dticket); thankYouForYourPatronage() }; global.stat.shppnt += p * .01; vnd.data.rep += itm[2] * (5 * (1 + .05)) * .0004 * vnd.repsc; if (vnd.data.rep > 100) vnd.data.rep = 100
 				if (itm[1] === 0) { el.children[2].innerHTML = '<small>sold out</small>'; el.children[2].style.color = el.children[0].children[0].style.color = el.children[1].style.color = 'grey' } else el.children[2].innerHTML = itm[1];
 			} buycbs(itm, vnd)
 		});
@@ -10925,7 +10805,7 @@ function rendershopitem(root, itm, vnd) {
 			if (you.wealth >= p * 10 && itm[1] >= 10) {
 				itm[1] -= 10; giveItem(itm[0], 10); spend(p * 10); m_update(); giveSkExp(skl.gred, itm[2] * 10 * .05); giveSkExp(skl.trad, itm[2] ** (1 + itm[0].rar * .1) * .05 * 10)
 				if (p * 10 >= GOLD) mf(-Math.ceil((p * 10 - GOLD) / GOLD), 3); if (p * 10 >= SILVER) mf(-Math.ceil((p * 10 - SILVER) / SILVER % 100), 2); mf(-p * 10 % 100, 1); global.stat.buyt += 10;
-				if (random() < .008) { giveItem(acc.dticket); msg('Thank you for your patronage!', 'gold', null, null, 'magenta') }; global.stat.shppnt += p * .01; vnd.data.rep += itm[2] * (10 * (1 + .1)) * .0004 * vnd.repsc; if (vnd.data.rep > 100) vnd.data.rep = 100
+				if (random() < .008) { giveItem(acc.dticket); thankYouForYourPatronage() }; global.stat.shppnt += p * .01; vnd.data.rep += itm[2] * (10 * (1 + .1)) * .0004 * vnd.repsc; if (vnd.data.rep > 100) vnd.data.rep = 100
 				if (itm[1] === 0) { el.children[2].innerHTML = '<small>sold out</small>'; el.children[2].style.color = el.children[0].children[0].style.color = el.children[1].style.color = 'grey' } else el.children[2].innerHTML = itm[1];
 			} buycbs(itm, vnd)
 		});
@@ -10934,7 +10814,7 @@ function rendershopitem(root, itm, vnd) {
 			if (you.wealth >= p && itm[1] > 0) {
 				itm[1] -= max; giveItem(itm[0], max); spend(p * max); m_update(); giveSkExp(skl.gred, itm[2] * max * .05); giveSkExp(skl.trad, itm[2] ** (1 + itm[0].rar * .1) * .05 * max)
 				if (p * max >= GOLD) mf(-Math.ceil((p * max - GOLD) / GOLD), 3); if (p * max >= SILVER) mf(-Math.ceil((p * max - SILVER) / SILVER % 100), 2); mf(-p * max % 100, 1); global.stat.buyt += max;
-				if (random() < .0008 * max) { giveItem(acc.dticket); msg('Thank you for your patronage!', 'gold', null, null, 'magenta') }; global.stat.shppnt += p * .01; vnd.data.rep += itm[2] * (max * (1 + max * .01)) * .0004 * vnd.repsc; if (vnd.data.rep > 100) vnd.data.rep = 100
+				if (random() < .0008 * max) { giveItem(acc.dticket); thankYouForYourPatronage() }; global.stat.shppnt += p * .01; vnd.data.rep += itm[2] * (max * (1 + max * .01)) * .0004 * vnd.repsc; if (vnd.data.rep > 100) vnd.data.rep = 100
 				if (itm[1] === 0) { el.children[2].innerHTML = '<small>sold out</small>'; el.children[2].style.color = el.children[0].children[0].style.color = el.children[1].style.color = 'grey'; } else el.children[2].innerHTML = itm[1];
 			} buycbs(itm, vnd)
 		});
@@ -10947,7 +10827,7 @@ function rendershopitem(root, itm, vnd) {
 		if (you.wealth >= p && itm[1] > 0) {
 			itm[1]--; giveItem(itm[0]); spend(p); m_update(); giveSkExp(skl.gred, itm[2] * .05); giveSkExp(skl.trad, itm[2] ** (1 + itm[0].rar * .1) * .05)
 			if (p >= GOLD) mf(-Math.ceil((p - GOLD) / GOLD), 3); if (p >= SILVER) mf(-Math.ceil((p - SILVER) / SILVER % 100), 2); mf(-p % 100, 1); global.stat.buyt++;
-			if (random() < .0008) { giveItem(acc.dticket); msg('Thank you for your patronage!', 'gold', null, null, 'magenta') }; global.stat.shppnt += p * .01; vnd.data.rep += itm[2] * .0004 * vnd.repsc; if (vnd.data.rep > 100) vnd.data.rep = 100
+			if (random() < .0008) { giveItem(acc.dticket); thankYouForYourPatronage() }; global.stat.shppnt += p * .01; vnd.data.rep += itm[2] * .0004 * vnd.repsc; if (vnd.data.rep > 100) vnd.data.rep = 100
 			if (itm[1] === 0) { el.children[2].innerHTML = '<small>sold out</small>'; el.children[2].style.color = this.style.color = el.children[1].style.color = 'grey' } else el.children[2].innerHTML = itm[1];
 		} buycbs(itm, vnd)
 	});
@@ -11132,7 +11012,7 @@ function smove(where, lv) {
 
 function giveFurniture(frt, l, show) {
 	let frn = l === true ? copy(frt) : frt;
-	if (show !== false) msg('Furniture Acquired: <span style="color:orange">"' + frt.name + '"</span>', 'yellow', frt, 9);
+	if (show !== false) msg('Furniture Acquired: <span style="color:orange">"' + frt.name + '"</span>', 'yellow', frt, 9, undefined, undefined, addDesc);
 	if (scanbyid(furn, frn.id)) frn.data.amount++; else { furn.push(frn); frn.data.amount++; }
 	frn.onGive(); if (global.wdwidx === 1) { empty(dom.ch_1h); for (let a in furn) renderFurniture(furn[a]) }
 	let v = 0; for (let a in furn) if (furn[a].v) { if (furn[a].multv) v += furn[a].v * furn[a].amount; else v += furn[a].v } if (dom.flsthdrbb) dom.flsthdrbb.innerHTML = v;
@@ -11242,7 +11122,7 @@ chss.t2.sl = function () {
 		if (global.flags.tr1_win === true && !global.flags.rwd1) { global.flags.rwd1 = true; giveItem(item.appl, 4); giveItem(item.hrb1, 5); smove(chss.tdf); }
 		else if (global.flags.tr2_win === true && !global.flags.rwd2) { global.flags.rwd2 = true; giveItem(item.brd, 2); giveItem(item.hrb1, 5); giveItem(eqp.sndl); smove(chss.tdf); }
 		else if (global.flags.tr3_win === true && !global.flags.rwd3) { global.flags.rwd3 = true; let itm = giveItem(eqp.vst); itm.dp *= .7; if (global.flags.m_un === true) giveItem(item.cp, 10); }
-		if (!global.flags.tr3_win || !global.flags.tr2_win || !global.flags.tr1_win) smove(chss.tdf); else { ; smove(chss.t3); giveTitle(ttl.inn); }
+		if (!global.flags.tr3_win || !global.flags.tr2_win || !global.flags.tr1_win) smove(chss.tdf); else { ; smove(chss.t3); giveTitle(ttl.inn, undefined, undefined, you); }
 	});
 }
 
@@ -11321,7 +11201,7 @@ chss.t3.sl = () => {
 					if (dlr === 0) chs('"Instructor: There\'s nothing I can take from you"', true); else {
 						chs('"Instructor: For all your stuff I can fetch you ' + dlr + ' ' + (dom.coincopper) + ' copper. How does that sound?"', true);
 						chs('"Accept"', false, 'lime').addEventListener('click', () => {
-							msg(stash.length + " Items returned back to dojo", 'ghostwhite'); global.stat.ivtntdj += stash.length; giveWealth(dlr); for (let a in stash) removeItem(stash[a]); if (global.stat.ivtntdj >= 300) giveTitle(ttl.tqtm); smove(chss.t3, false);
+							msg(stash.length + " Items returned back to dojo", 'ghostwhite'); global.stat.ivtntdj += stash.length; giveWealth(dlr); for (let a in stash) removeItem(stash[a]); if (global.stat.ivtntdj >= 300) giveTitle(ttl.tqtm, undefined, undefined, you); smove(chss.t3, false);
 						});
 					}
 					chs('"<= Go back"', false).addEventListener('click', () => {
@@ -12548,7 +12428,7 @@ chss.bsmnthm1.sl = () => {
 					if (!global.flags.bsmntsctgt) chs('"Rummage through rubble"', false).addEventListener('click', () => {
 						chs("Indeed, simply glancing over the rubble won\'t reveal you any hidden secrets, you think you better investigate everything carefully", true);
 						chs('"Prepare for further examination"', false).addEventListener('click', () => {
-							global.flags.bsmntsctgt = true; giveAction(act.scout); global.current_a.deactivate(); global.current_a = act.default; smove(chss.bsmnthm1, false)
+							global.flags.bsmntsctgt = true; giveAction(act.scout, addDesc); global.current_a.deactivate(); global.current_a = act.default; smove(chss.bsmnthm1, false)
 						});
 					});
 					chs('"<= Return"', false).addEventListener('click', () => {
@@ -13504,7 +13384,7 @@ function lvlup(p, t) {
 			msg_add(' | HP +' + hpp, 'darkturquoise');
 			you.expnext_t = you.expnext();
 			if (you.eqp[0].id === 10000) { you.eqp[0].cls[2] = you.lvl / 4 << 0; you.eqp[0].aff[0] = you.lvl / 5 << 0; you.eqp[0].ctype = 2 }
-			if (global.stat.deadt < 1 && you.lvl >= 20) giveTitle(ttl.ndthextr)
+			if (global.stat.deadt < 1 && you.lvl >= 20) giveTitle(ttl.ndthextr, undefined, undefined, you)
 		}
 	} p.stat_r(); update_d();
 }
@@ -13528,21 +13408,12 @@ function giveSkExp(skl, exp, res) {
 	else {
 		let extra = (skl.exp + exp) - skl.expnext_t;
 		skl.exp = 0; skl.lvl++; global.stat.slvs++;
-		if (!scanbyid(you.skls, skl.id)) { you.skls.push(skl); msg('<span style="text-shadow:cyan 0px 0px 2px">New Skill Unlocked! <span style="text-shadow:red 0px 0px 2px;color:orange">"' + (!!skl.bname ? skl.bname : skl.name) + '"</span></span>', 'aqua', skl, 6); if (!global.flags.sklu) { dom.ct_bt2.innerHTML = 'skills'; global.flags.sklu = true } }
-		else { msg('Skill <span style="color:tomato">\'' + (!!skl.bname ? skl.bname : skl.name) + '\'</span> Leveled Up: ' + skl.lvl, 'deepskyblue', skl, 6); } skl.onLevel();
+		if (!scanbyid(you.skls, skl.id)) { you.skls.push(skl); msg('<span style="text-shadow:cyan 0px 0px 2px">New Skill Unlocked! <span style="text-shadow:red 0px 0px 2px;color:orange">"' + (!!skl.bname ? skl.bname : skl.name) + '"</span></span>', 'aqua', skl, 6, undefined, undefined, addDesc); if (!global.flags.sklu) { dom.ct_bt2.innerHTML = 'skills'; global.flags.sklu = true } }
+		else { msg('Skill <span style="color:tomato">\'' + (!!skl.bname ? skl.bname : skl.name) + '\'</span> Leveled Up: ' + skl.lvl, 'deepskyblue', skl, 6, undefined, undefined, addDesc); } skl.onLevel();
 		skl.expnext_t = skl.expnext();
-		if (!!skl.mlstn) for (let ss = 0; ss < skl.mlstn.length; ss++) if (skl.mlstn[ss].lv === skl.lvl && skl.mlstn[ss].g === false) { msg("NEW PERK UNLOCKED " + '<span style="color:tomato">("' + skl.name + '")<span style="color:orange">lvl: ' + skl.mlstn[ss].lv + '</span></span>', 'lime', { x: skl.name, y: 'Perk lvl ' + skl.mlstn[ss].lv + ': <span style="color:yellow">' + skl.mlstn[ss].p + '</span>' }, 7); skl.mlstn[ss].f(); skl.mlstn[ss].g = true };
+		if (!!skl.mlstn) for (let ss = 0; ss < skl.mlstn.length; ss++) if (skl.mlstn[ss].lv === skl.lvl && skl.mlstn[ss].g === false) { msg("NEW PERK UNLOCKED " + '<span style="color:tomato">("' + skl.name + '")<span style="color:orange">lvl: ' + skl.mlstn[ss].lv + '</span></span>', 'lime', { x: skl.name, y: 'Perk lvl ' + skl.mlstn[ss].lv + ': <span style="color:yellow">' + skl.mlstn[ss].p + '</span>' }, 7, undefined, undefined, addDesc); skl.mlstn[ss].f(); skl.mlstn[ss].g = true };
 		giveSkExp(skl, extra, false);
 	} skl.onGive(exp);
-}
-
-function giveTitle(title, lv) {
-	if (title.have === false) {
-		global.titles.push(title); if (title.id !== 0) global.titlese.push(title); you.title = title; title.have = true; if (!title.tget && title.talent) { title.talent(); title.tget = true }
-		title.onGet();
-		for (let x in global.ttlschk) global.ttlschk[x]();
-		if (!lv) { msg('New Title Earned! ' + col('"' + title.name + '"', 'orange'), 'cyan', title, 5); dom.d3.update(); }
-	} else return;
 }
 
 function isort(type, flags) {
@@ -13639,7 +13510,7 @@ function ontick() {
 		}
 	}
 	let h = getHour();
-	if (h > 5 && h < 22) { global.flags.isday = true; dom.d_moon.style.display = 'none' } else { if (global.flags.inside === false && random() < .00002 * you.mods.stdstps) { msg('A star particle landed on you!', 'gold', null, null, 'darkblue'); giveItem(item.stdst) } global.flags.isday = false; dom.d_moon.style.display = '' }
+	if (h > 5 && h < 22) { global.flags.isday = true; dom.d_moon.style.display = 'none' } else { if (global.flags.inside === false && random() < .00002 * you.mods.stdstps) { msg('A star particle landed on you!', 'gold', null, null, 'darkblue', undefined, addDesc); giveItem(item.stdst) } global.flags.isday = false; dom.d_moon.style.display = '' }
 	for (let g = 0; g < you.eff.length; g++) if (you.eff[g].type === 3 || you.eff[g].type === 5 || you.eff[g].type === 6) you.eff[g].use(you.eff[g].y, you.eff[g].z);
 	for (let g = 0; g < global.current_m.eff.length; g++) if (global.current_m.eff[g].type === 3 || global.current_m.eff[g].type === 5 || global.current_m.eff[g].type === 6) global.current_m.eff[g].use(global.current_m.eff[g].y, global.current_m.eff[g].z);
 	if (global.flags.btl === true) timers.btl = setTimeout(fght(you, global.current_m), 1000 / global.fps); else giveSkExp(skl.mdt, .0065 * (1 + skl.ptnc.lvl * .15) * (effect.incsk.active === true ? 2 : 1))
@@ -13914,7 +13785,7 @@ planner.imorph.f = function () {
 				if (itm.data.rottil >= 1) {
 					let am = (itm.amount * randf(itm.rot[2], itm.rot[3]) + 1) << 0; itm.data.rottil--;
 					reduce(itm, am); if (itm.amount <= 0) planner.imorph.data.items.splice(planner.imorph.data.items.indexOf(itm));
-					msg('Your <span style="color:cyan">x' + am + '</span> <span style="color: orange">' + itm.name + '</span> ' + select(['rotted away', 'went bad', 'spoiled']) + '!', 'yellow', null, null, 'green')
+					msg('Your <span style="color:cyan">x' + am + '</span> <span style="color: orange">' + itm.name + '</span> ' + select(['rotted away', 'went bad', 'spoiled']) + '!', 'yellow', null, null, 'green', undefined, addDesc)
 					if (itm.onChange) itm.onChange(am)
 				} break;
 		}
@@ -13972,14 +13843,6 @@ planner.zrespawn.f = function () {
 		for (let a in things) if (random() <= things[a].c) sector.home.data.ctlt.push(things[a].t.id)
 	}
 }; addPlan(planner.zrespawn)
-
-function addElement(parent_element, elem, id, cls) {
-	let newelem = document.createElement(elem);
-	if (id) newelem.id = id;
-	if (cls) newelem.className = cls;
-	parent_element.appendChild(newelem);
-	return newelem;
-}
 
 function deepCopy(o) {
 	let copy = o, k;

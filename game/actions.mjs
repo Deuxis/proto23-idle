@@ -2,7 +2,7 @@
 //ACT
 ///////////////////////////////////////////
 import global from "./global.mjs"
-import dom from "./dom.mjs"
+import dom, { msg } from "./dom.mjs"
 import you from "./you.mjs"
 import skl from "./skills.mjs"
 import effect from "./effect.mjs"
@@ -92,9 +92,9 @@ act.demo2.use = function () {
 	if (!f) { msg('You ' + select(['stab', 'slash']) + ' your ' + select(['hand', 'chest', 'leg', 'palm', 'arm', 'foot']), 'red') } else msg('You\'re already injured', 'orange'); giveEff(you, effect.bled, 10, 1)
 }
 
-export function giveAction(a) {
+export function giveAction(a, addDesc) {
 	if (a.have === false) {
 		if (!global.flags.actsu) { global.flags.actsu = true; dom.ct_bt3.innerHTML = 'actions' }
-		msg('You learned a new action: <span style="color:tomato">"' + a.name + '"</span>', 'lime', a, 9); a.have = true; acts.push(a); if (acts.length >= 1 && dom.acccon) { empty(dom.acccon); for (let a in acts) renderAct(acts[a]) }
+		msg('You learned a new action: <span style="color:tomato">"' + a.name + '"</span>', 'lime', a, 9, undefined, undefined, addDesc); a.have = true; acts.push(a); if (acts.length >= 1 && dom.acccon) { empty(dom.acccon); for (let a in acts) renderAct(acts[a]) }
 	}
 }
