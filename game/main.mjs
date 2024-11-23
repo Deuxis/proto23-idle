@@ -10957,11 +10957,11 @@ function removeEff(e, t) {
 	if (e.active === true) {
 		if (e.x) {
 			if (e.target.id === you.id) {
-				node = global.e_e.indexOf(e); dom.d101.removeChild(dom.d101.children[node]); global.e_e.splice(node, 1);
+				var node = global.e_e.indexOf(e); dom.d101.removeChild(dom.d101.children[node]); global.e_e.splice(node, 1);
 				if (dom.d101.children.length > you.eff.length) empty(dom.d101);
 			}
 			else {
-				node = global.e_em.indexOf(e); dom.d101m.removeChild(dom.d101m.children[node]); global.e_em.splice(node, 1);
+				var node = global.e_em.indexOf(e); dom.d101m.removeChild(dom.d101m.children[node]); global.e_em.splice(node, 1);
 				if (dom.d101m.children.length > e.target.eff.length) empty(dom.d101m);
 			} e.onRemove(); global.dscr.style.display = 'none';
 		} e.target.eff.splice(e.target.eff.indexOf(e), 1); e.active = false; clearInterval(timers.inup); effdfix()
