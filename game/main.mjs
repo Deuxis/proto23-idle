@@ -238,7 +238,7 @@ function load(dt) {
 		}
 		let a18 = JSON.parse(str[17]); for (let obj in a18) for (let q in chss) if (chss[q].id === a18[obj].id) { if (objempty(a18[obj].data) === false) chss[q].data = a18[obj].data }
 		if (str[19]) { let a19 = JSON.parse(str[19]); for (let a in a19) for (let b in ttl) if (a19[a] === ttl[b].id) ttl[b].tget = true }
-		for (let a in ttl) { if (ttl[a].have && ttl[a].talent && !ttl[a].tget) { ttl[a].talent(); ttl[a].tget = true } }
+		for (let a in ttl) { if (ttl[a].have && ttl[a].talent && !ttl[a].tget) { ttl[a].talent(you); ttl[a].tget = true } }
 		isort(global.sm); rsort(global.rm); rstcrtthg(); you.stat_r(); global.spbtsr[global.rm].style.color = 'yellow';
 		if (global.flags.aw_u) { dom.d0.style.display = ''; dom.d1m.style.display = ''; dom.inv_ctx.style.display = ''; dom.gmsgs.style.display = ''; dom.ct_ctrl.style.display = ''; dom.ctr_1.style.display = ''; dom.d_lct.style.display = '' } dom.ctrwin3.style.display = 'none'; dom.ctrwin5.style.display = 'none'
 		dom.d5_1_1.update(); dom.d5_2_1.update(); dom.d6.update(); update_d(); dom.d3.update(); update_m(); m_update(); dom.d7m.update(); dom.d5_3_1.update();
@@ -10404,7 +10404,7 @@ function giveItem(obj, am, ignore, flag) {
 			obj.new = true; obj.data.uid = ++global.uid;
 			let tmp = obj; obj.data.dscv = true; obj.have = true;
 			nitm = copy(obj); nitm.data = deepCopy(obj.data); nitm.eff = tmp.eff; if (tmp.dss) nitm.dss = tmp.dss;
-			inv.push(nitm); msg('New item obtained: <span style="color:coral">' + nitm.name + '</span>', 'cyan', obj, undefined, undefined, undefined, addDesc); obj.onGet();
+			inv.push(nitm); msg('New item obtained: <span style="color:coral">' + nitm.name + '</span>', 'cyan', obj, undefined, undefined, undefined, addDesc); obj.onGet(you);
 			if (global.sm === nitm.stype) global.sinv.push(nitm); if (nitm.stype === global.sm || global.sm === 1) renderItem(nitm);
 			let g = obj.id / 10000 << 0; if (!scan(dar[g], obj.id)) dar[g].push(obj.id);
 			if (flag && flag.fl) iftrunkopen(1); else iftrunkopenc(1); if (!global.flags.loadstate && !ignore) global.stat.igtttl += am;
@@ -10420,9 +10420,9 @@ function giveItem(obj, am, ignore, flag) {
 			}, 100)
 		}
 		obj.have = true; obj.data.dscv = true;
-		inv.push(obj); obj.amount += am; msg('New item obtained: <span style="color:coral">' + obj.name + '</span><span style="color:lime"> x' + am + '</span>', 'cyan', obj, undefined, undefined, undefined, addDesc); obj.onGet();
+		inv.push(obj); obj.amount += am; msg('New item obtained: <span style="color:coral">' + obj.name + '</span><span style="color:lime"> x' + am + '</span>', 'cyan', obj, undefined, undefined, undefined, addDesc); obj.onGet(you);
 		if (global.sm === obj.stype) global.sinv.push(obj); if (obj.stype === global.sm || global.sm === 1) renderItem(obj);
-	} else { obj.amount += am; msg('Item Acquired: <span style="color:chartreuse">' + obj.name + '</span><span style="color:lime"> x' + am + '</span>', 'cyan', obj, undefined, undefined, undefined, addDesc); if (global.sm === 1) updateInv(inv.indexOf(obj)); else if (global.sm === obj.stype) updateInv(global.sinv.indexOf(obj)); obj.onGet(); }
+	} else { obj.amount += am; msg('Item Acquired: <span style="color:chartreuse">' + obj.name + '</span><span style="color:lime"> x' + am + '</span>', 'cyan', obj, undefined, undefined, undefined, addDesc); if (global.sm === 1) updateInv(inv.indexOf(obj)); else if (global.sm === obj.stype) updateInv(global.sinv.indexOf(obj)); obj.onGet(you); }
 	let g = obj.id / 10000 << 0; if (!scan(dar[g], obj.id)) dar[g].push(obj.id);
 	if (obj.multif) for (let a = 0; a < am; a++) obj.multif()
 	if (obj.rot) {

@@ -19,8 +19,8 @@ function Title(id) {
 
 export function giveTitle(title, lv, addDesc, you) {
 	if (title.have === false) {
-		global.titles.push(title); if (title.id !== 0) global.titlese.push(title); you.title = title; title.have = true; if (!title.tget && title.talent) { title.talent(); title.tget = true }
-		title.onGet()
+		global.titles.push(title); if (title.id !== 0) global.titlese.push(title); you.title = title; title.have = true; if (!title.tget && title.talent) { title.talent(you); title.tget = true }
+		title.onGet(you)
 		for (let x in global.ttlschk) global.ttlschk[x]()
 		if (!lv) { msg('New Title Earned! ' + col('"' + title.name + '"', 'orange'), 'cyan', title, 5, undefined, undefined, addDesc); dom.d3.update() }
 	} else return
