@@ -1,4 +1,3 @@
-'use strict'
 var dom = new Object();
 var global = new Object(); var listen = new Object();
 var w_manager = new Object();
