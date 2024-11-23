@@ -1,3 +1,4 @@
+'use strict'
 var dom = new Object();
 var global = new Object(); var listen = new Object();
 var w_manager = new Object();
@@ -282,10 +283,10 @@ function load(dt) {
 		global.flags.stbxinifld = true;
 	}
 	if (global.flags.bgspc) document.body.style.background = 'linear-gradient(180deg,#000,#123)'; else document.body.style.backgroundColor = 'rgb(' + global.bg_r + ',' + global.bg_g + ',' + global.bg_b + ')';
-	if (dom.bkssttbd) { empty(dom.bkssttbd); document.body.removeChild(dom.bkssttbd); global.flags.bksstt = false; kill(dom.bkssttbd) }
-	if (global.flags.expatv) { empty(dom.ct_bt4_5a_nc); document.body.removeChild(dom.ct_bt4_5a_nc); kill(dom.ct_bt4_5a_nc) }
-	if (global.flags.impatv) { empty(dom.ct_bt4_5b_nc); document.body.removeChild(dom.ct_bt4_5b_nc); kill(dom.ct_bt4_5b_nc) }
-	if (dom.error) { empty(dom.error); document.body.removeChild(dom.error); kill(dom.error) }
+	if (dom.bkssttbd) { empty(dom.bkssttbd); document.body.removeChild(dom.bkssttbd); global.flags.bksstt = false }
+	if (global.flags.expatv) { empty(dom.ct_bt4_5a_nc); document.body.removeChild(dom.ct_bt4_5a_nc); }
+	if (global.flags.impatv) { empty(dom.ct_bt4_5b_nc); document.body.removeChild(dom.ct_bt4_5b_nc); }
+	if (dom.error) { empty(dom.error); document.body.removeChild(dom.error); }
 	if (global.flags.autosave === true) { dom.autosves.checked = true; timers.autos = setInterval(function () { save(true); }, 30000) }
 	//if(global.flags.msgtm===true)dom.ct_bt4_61b.checked=true;
 	////patch things 
@@ -9924,7 +9925,7 @@ dom.ct_bt4_5a.addEventListener('click', function () {
 		dom.ct_bt4_5a_nhx = addElement(dom.ct_bt4_5a_nh, 'div'); draggable(dom.ct_bt4_5a_nh, dom.ct_bt4_5a_nc);
 		dom.ct_bt4_5a_nhx.innerHTML = '✖'; dom.ct_bt4_5a_nhx.style.float = 'right';
 		dom.ct_bt4_5a_nhx.style.backgroundColor = 'red';
-		dom.ct_bt4_5a_nhx.addEventListener('click', function () { global.flags.expatv = false; empty(dom.ct_bt4_5a_nc); document.body.removeChild(dom.ct_bt4_5a_nc); kill(dom.ct_bt4_5a_nc) });
+		dom.ct_bt4_5a_nhx.addEventListener('click', function () { global.flags.expatv = false; empty(dom.ct_bt4_5a_nc); document.body.removeChild(dom.ct_bt4_5a_nc); });
 		dom.ct_bt4_5a_nb = addElement(dom.ct_bt4_5a_nc, 'div');
 		dom.ct_bt4_5a_nbc = addElement(dom.ct_bt4_5a_nb, 'textArea'); dom.ct_bt4_5a_nbc.style.fontFamily = 'MS Gothic';
 		dom.ct_bt4_5a_nbc.style.width = '100%'; dom.ct_bt4_5a_nbc.style.height = '378px'; dom.ct_bt4_5a_nbc.style.overflow = 'auto'
@@ -9948,7 +9949,7 @@ dom.ct_bt4_5b.addEventListener('click', function () {
 			if (dom.ct_bt4_5b_nbc.value == "" || dom.ct_bt4_5b_nbc.value == "?") { dom.ct_bt4_5b_nbc.value = '?'; return }
 			let storage = window.localStorage; let t = dom.ct_bt4_5b_nbc.value; bt = b64_to_utf8(dom.ct_bt4_5b_nbc.value);
 			if (/savevalid/g.test(bt)) {
-				storage.setItem("v0.2a", t); load(t); global.flags.impatv = false; empty(dom.ct_bt4_5b_nc); document.body.removeChild(dom.ct_bt4_5b_nc); kill(dom.ct_bt4_5b_nc)
+				storage.setItem("v0.2a", t); load(t); global.flags.impatv = false; empty(dom.ct_bt4_5b_nc); document.body.removeChild(dom.ct_bt4_5b_nc);
 			}
 			else { dom.ct_bt4_5b_nbc.value = 'Save Invalid'; return }
 		});
@@ -9968,7 +9969,7 @@ dom.ct_bt4_5b.addEventListener('click', function () {
 				let t = b64_to_utf8(r.result);
 				if (/savevalid/g.test(t)) {
 					dom.ct_bt4_5b_nbc.value = 'Load Successful';
-					storage.setItem("v0.2a", r.result); load(r.result); global.flags.impatv = false; empty(dom.ct_bt4_5b_nc); document.body.removeChild(dom.ct_bt4_5b_nc); kill(dom.ct_bt4_5b_nc)
+					storage.setItem("v0.2a", r.result); load(r.result); global.flags.impatv = false; empty(dom.ct_bt4_5b_nc); document.body.removeChild(dom.ct_bt4_5b_nc);
 				}
 				else { dom.ct_bt4_5b_nbc.value = 'Save Invalid'; return }
 			})
@@ -11310,7 +11311,7 @@ function removeItem(obj, flag) {
 	global.dscr.style.display = 'none'; inv.splice(inv.indexOf(obj), 1); obj.have = false;
 	if (obj.rot) for (let a in planner.imorph.data.items) if (planner.imorph.data.items[a].id === obj.id) { planner.imorph.data.items.splice(planner.imorph.data.items.indexOf(obj)); }
 	if (global.lw_op === 1) rsort(global.rm)
-	if (flag && flag.fl) iftrunkopen(1); else iftrunkopenc(1); if (obj.slot) kill(obj)
+	if (flag && flag.fl) iftrunkopen(1); else iftrunkopenc(1);
 }
 
 function m_update() {
@@ -14140,8 +14141,6 @@ function rsort(type) {
 }
 
 function objempty(obj) { for (let a in obj) return false }
-
-function kill(obj) { obj = null; delete obj }
 
 function effAct_test() {
 	for (let index in you.eff) you.eff[index].use(creature.bat);
