@@ -7461,7 +7461,6 @@ function Creature() {
 		for (let a in checksd) checksd[a].f(this, checksd[a].o);
 		for (let x in global.achchk[1]) global.achchk[1][x](killer);
 		dom.d5_1_1m.update(); dom.d7m.update();
-		kill(this)
 	};
 	this.onDeathE = function () {
 		giveSkExp(skl.war, (this.rnk * 2 - 1) * (1 + this.lvl * .05) * .1);
