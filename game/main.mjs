@@ -1,10 +1,10 @@
 var dom = new Object();
-var global = new Object(); var listen = new Object();
+var global = new Object(), listen = new Object();
 var w_manager = new Object();
 var creature = new Object();
 var offline = new Object();
 var effect = new Object();
-var wpn = new Object(); var eqp = new Object(); var acc = new Object(); var sld = new Object(); var item = new Object(); var itemgroup = [item, wpn, eqp, sld, acc];
+var wpn = new Object(), eqp = new Object(), acc = new Object(), sld = new Object(), item = new Object(), itemgroup = [item, wpn, eqp, sld, acc];
 var rcp = new Object();
 var area = new Object();
 var timers = new Object();
@@ -19,20 +19,22 @@ var act = new Object();
 var test = new Object();
 var callback = new Object();
 var effector = new Object();
-var planner = new Object(); plans = [[], [], []];
-var sector = new Object(); var sectors = [];
-var check = new Object(); var checksd = [];
-var inv = []; var furn = []; var qsts = []; var dar = [[], [], [], [], []]; you = new Object(); var home = new Object(); eqp.dummy = {};
+var planner = new Object(), plans = [[], [], []];
+var sector = new Object(), sectors = [];
+var check = new Object(), checksd = [];
+var inv = [], furn = [], qsts = [], dar = [[], [], [], [], []], you = new Object(), home = new Object()
+eqp.dummy = {};
 var container = new Object();
 var mastery = new Object();
-const YEAR = 518400; const MONTH = 43200; const DAY = 1440; const WEEK = 10080; const HOUR = 60;
-const SILVER = 100; const GOLD = 10000; let tempt = new Date();
+const YEAR = 518400, MONTH = 43200, DAY = 1440, WEEK = 10080, HOUR = 60;
+const SILVER = 100, GOLD = 10000, tempt = new Date();
 global.home_loc = 111; global.lst_sve = '?'; global.ver = 470;
 global.sm = 1; global.rm = 0; global.bg_g = global.bg_r = global.bg_b = 255;
 global.s_l = 0; global.spnew = 0; global.vsnew = 10; global.uid = 1; global.wdwidx = 0; global.menuo = 0; global.lastmsgc = 0
 global.sinv = []; global.srcp = []; global.drdata = {};
 global.lw_op = 0; global.zone_a_p = [];
-global.rec_d = []; global.e_e = []; global.e_em = []; global.titles = []; global.titlese = []; var acts = []; global.tstcr = [];
+global.rec_d = []; global.e_e = []; global.e_em = []; global.titles = []; global.titlese = []; global.tstcr = [];
+var acts = [];
 global.atkdftm = [-1, -1, -1]; global.atkdfty = [-1, -1]; global.atkdftydt = {};
 global.current_m; global.current_z; global.current_l; global.stat = { tick: 0, akills: 0, fooda: 0, foodb: 0, foodal: 0, foodt: 0, ftried: 0, moneyg: 0, die_p: 0, die_p_t: 0, ivtntdj: 0, athme: 0, athmec: 0, slvs: 0, lgtstk: 0, moneysp: 0, shppnt: 0, exptotl: 0, seed1: (Math.random() * 7e+7 << 7) % 7 & 7, igtttl: 0, msts: [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]], msks: [0, 0, 0, 0, 0, 0, 0], sttime: tempt.getFullYear() + '/' + (tempt.getMonth() + 1) + '/' + tempt.getDate() + ' ' + tempt.getHours() + ':' + (tempt.getMinutes() >= 10 ? tempt.getMinutes() : '0' + tempt.getMinutes()) + ':' + (tempt.getSeconds() > 10 ? tempt.getSeconds() : '0' + tempt.getSeconds()), buyt: 0, rdttl: 0, dsst: 0, thrt: 0, crftt: 0, deadt: 0, smovet: 0, timeslp: 0, misst: 0, dodgt: 0, potnst: 0, medst: 0, plst: 0, jcom: 0, qstc: 0, popt: 0, dsct: 0, bloodt: 0, rdgtttl: 0, cat_c: 0, dmgdt: 0, dmgrt: 0, onesht: 0, pts: 0, gsvs: 0, hbhbsld: 0, wsnburst: 50, wsnrest: 50, indkill: 0, coldnt: 0, lastver: global.ver };
 global.hit_a = 0; global.hit_b = 0; global.timescale = 1; global.keytarget; global.offline_evil_index = 1;
@@ -830,7 +832,7 @@ function Time() {
 	this.year = 0;
 }
 
-time = new Time();
+var time = new Time();
 time.minute = 338144100;
 global.text.d_l = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 global.text.d_s = ["Mon.", "Tue.", "Wed.", "Thu.", "Fri.", "Sat.", "Sun."];
@@ -10142,7 +10144,7 @@ function update_m() {
 	dom.d9m.update();
 }
 
-testz = new Area();
+var testz = new Area();
 testz.apop = 4000;
 testz.bpop = 6000;
 testz.vsize = 10000;
