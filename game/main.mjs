@@ -1,5 +1,5 @@
 import global from './global.mjs';
-import dom, { addElement, msg } from './dom.mjs';
+import dom, { addElement, msg, col } from './dom.mjs';
 import youHolder, { makeYou } from './you.mjs'
 import act, { acts, giveAction } from './actions.mjs'
 import ttl, { giveTitle } from './titles.mjs'
@@ -39,7 +39,7 @@ window.addEventListener('load', () => { load() });
 
 // A bunch of init code that was on toplevel of main previously, immediately executed
 const init = () => {
-	makeYou()
+	makeYou(addDesc)
 }
 init()
 
@@ -13558,13 +13558,6 @@ function nograd(s) {
 
 function reduce(itm, am) { if (am) { itm.amount = itm.amount - am <= 0 ? 0 : itm.amount - am } if (itm.amount <= 0) { removeItem(itm); updateTrunkLeftItem(itm, true) } else if (global.sm === 1) updateInv(inv.indexOf(itm)); else if (global.sm === itm.stype) updateInv(global.sinv.indexOf(itm)); updateTrunkLeftItem(itm) }
 function cansee() { if ((global.flags.isdark && you.mods.light > 0) || skl.ntst.lvl >= 12) return true }
-
-function col(txt, c, bc) {
-	let cc; let bcc;
-	if (c) cc = 'color:' + c + ';';
-	if (bc) bcc = 'background-color:' + bc + ';';
-	return '<span' + (c ? (' style="' + cc + (bc ? bcc : '') + '"') : '') + '>' + txt + '</span>'
-}
 
 function usePlayerWeaponSkill() {
 	switch (you.eqp[0].wtype) {

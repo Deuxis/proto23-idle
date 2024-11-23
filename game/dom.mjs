@@ -42,3 +42,10 @@ export function msg(txt, c, dsc, type, bc, chck, addDesc) {
 		//  else {global.lastmsg=msg.innerHTML;global.lastmsgc=0;}} else global.lastmsg=msg.innerHTML;
 	}
 }
+
+export function col(txt, c, bc) {
+	let cc; let bcc
+	if (c) cc = 'color:' + c + ';'
+	if (bc) bcc = 'background-color:' + bc + ';'
+	return '<span' + (c ? (' style="' + cc + (bc ? bcc : '') + '"') : '') + '>' + txt + '</span>'
+}

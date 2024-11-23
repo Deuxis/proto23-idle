@@ -17,9 +17,9 @@ import chss from "./chss.mjs"
 export const youHolder = { you: {} }
 export { youHolder as default }
 
-export const makeYou = () => {
+export const makeYou = (addDesc) => {
 	youHolder.you = new You()
-	giveTitle(ttl.new, true, youHolder.you)
+	giveTitle(ttl.new, false, addDesc, youHolder.you)
 }
 
 function You() {
