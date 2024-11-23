@@ -10672,7 +10672,7 @@ function dmg_calc(att, def, atk) {
 			giveSkExp(skl.seye, 1); cpw = you.mods.cpwr; cbst = 1 + skl.war.use();
 			dom.d1m.style.left = parseInt(global.special_x) + rand(-3, 3) + 'px'; dom.d1m.style.top = parseInt(global.special_y) + rand(-3, 3) + 'px';
 			setTimeout(() => { dom.d1m.style.left = parseInt(global.special_x) + 'px'; dom.d1m.style.top = parseInt(global.special_y) + 'px'; }, 60);
-		} else { giveSkExp(skl.dngs, 1); sk = skl.dngs.use(); dmod = 1 - sk * (sk > 25 ? .01 : .02) }
+		} else { giveSkExp(skl.dngs, 1); var sk = skl.dngs.use(); dmod = 1 - sk * (sk > 25 ? .01 : .02) }
 		if (dmg <= 0) dmg = 0;
 		cdmg = dmg * randf(1.9 * cpw, 2.1 * cpw) * .5 * dmod * cbst;
 		global.flags.crti = true;
