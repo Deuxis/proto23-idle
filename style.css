@@ -2,6 +2,22 @@ html body {
 	font: 1.1em MS Gothic;
 }
 
+.loadingContainer {
+	z-index: 9997;
+	width: 100vw;
+	height: 100vh;
+	position: fixed;
+	top: 0;
+	left: 0;
+	background-color: lightgrey;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-size: 4em;
+}
+
 input:focus {
 	outline: none;
 }

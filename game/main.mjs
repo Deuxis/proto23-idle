@@ -1,7 +1,9 @@
 import { init as initUi } from "./ui.mjs"
 
-const init = () => {
-	initUi()
+class Game {
+	constructor() {
+		initUi()
+	}
 }
 
-init()
+export const game = new Game()

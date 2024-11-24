@@ -1,10 +1,14 @@
-const { body: root } = document
+const root = document.body
 
-const createElement = (...args) => document.createElement(...args)
-const createTextNode = (...args) => document.createTextNode(...args)
+const loadingScreen = (() => {
+	const loading = document.createElement('div')
+	loading.className = 'loadingContainer'
+	const loadingSpan = document.createElement('span')
+	loadingSpan.appendChild(document.createTextNode('LOADING'))
+	loading.appendChild(loadingSpan)
+	return loading
+})()
 
 export const init = () => {
-	const p = createElement('p')
-	p.appendChild(createTextNode('This looks like it\'s gonna be fun :)'))
-	root.appendChild(p)
+	root.replaceChildren(loadingScreen)
 }
