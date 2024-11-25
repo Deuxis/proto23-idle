@@ -22,8 +22,10 @@ const createElement = (tagName, { id, classes, style } = {}) => {
 const createTextNode = (str) => document.createTextNode(str)
 const appendTextNode = (elem, str) => elem.appendChild(createTextNode(str))
 
+/** Bottom-center screen describing current situation and possible actions */
 const renderControlView = (state) => {
 	const view = createElement('div', { id: 'ctrmg' })
+	// Top bar with location, weather and time
 	{
 		const overviewBar = createElement('div', { id: 'ctrm_1' })
 		view.appendChild(overviewBar)
@@ -42,20 +44,21 @@ const renderControlView = (state) => {
 			locationDisplay.appendChild(locationSpan2)
 		}
 		{
-			const weather = createElement('div', { id: 'ctr_w' })
-			container.appendChild(weather)
-			const seasonSmall = createElement('small', { style: { color: state.weather.seasonColor } })
-			weather.appendChild(seasonSmall)
-			appendTextNode(seasonSmall, `[${state.weather.season}]`)
+			const { seasonColor, season, weather, weatherIcon, moonPhase } = state.weather
+			const weatherDiv = createElement('div', { id: 'ctr_w' })
+			container.appendChild(weatherDiv)
+			const seasonSmall = createElement('small', { style: { color: seasonColor } })
+			weatherDiv.appendChild(seasonSmall)
+			appendTextNode(seasonSmall, `[${season}]`)
 			const weatherText = createElement('span')
-			weather.appendChild(weatherText)
-			appendTextNode(weatherText, state.weather.weather)
-			const weatherIcon = createElement('span')
-			weather.appendChild(weatherIcon)
-			appendTextNode(weatherIcon, state.weather.weatherIcon)
-			const moonPhase = createElement('span')
-			weather.appendChild(moonPhase)
-			appendTextNode(moonPhase, state.weather.moonPhase)
+			weatherDiv.appendChild(weatherText)
+			appendTextNode(weatherText, weather)
+			const weatherIconSpan = createElement('span')
+			weatherDiv.appendChild(weatherIconSpan)
+			appendTextNode(weatherIconSpan, weatherIcon)
+			const moonPhaseSpan = createElement('span')
+			weatherDiv.appendChild(moonPhaseSpan)
+			appendTextNode(moonPhaseSpan, moonPhase)
 		}
 		{
 			const time = createElement('div', { id: 'ctr_t' })
@@ -64,6 +67,26 @@ const renderControlView = (state) => {
 			time.appendChild(daySmall)
 			appendTextNode(daySmall, state.time.dayOfTheWeek)
 			appendTextNode(time, state.time.timeString)
+		}
+	}
+	// Situation and options display
+	{
+		const { description, options } = state.situation
+		const containerOuter = createElement('div')
+		view.appendChild(containerOuter)
+		const containerInner = createElement('div')
+		containerOuter.appendChild(containerInner)
+		const situationDisplay = createElement('div', { id: 'ctrm_2' })
+		containerInner.appendChild(situationDisplay)
+		// Description of the situation
+		const descriptionDiv = createElement('div', { id: 'chs' })
+		situationDisplay.appendChild(descriptionDiv)
+		appendTextNode(descriptionDiv, description)
+		// Options
+		for (const option of options) {
+			const optionDiv = createElement('div', { classes: ['chs'] })
+			situationDisplay.appendChild(optionDiv)
+			appendTextNode(optionDiv, option)
 		}
 	}
 	return view
@@ -82,6 +105,14 @@ const testState = {
 		time: {
 			dayOfTheWeek: 'Wednesday',
 			timeString: '652/4/15 17:46',
+		},
+		situation: {
+			description: 'Select the difficulty',
+			options: [
+				'Easiest',
+				'Easy',
+				'Normal',
+			],
 		},
 	},
 }
