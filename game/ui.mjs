@@ -57,6 +57,14 @@ const renderControlView = (state) => {
 			weather.appendChild(moonPhase)
 			appendTextNode(moonPhase, state.weather.moonPhase)
 		}
+		{
+			const time = createElement('div', { id: 'ctr_t' })
+			container.appendChild(time)
+			const daySmall = createElement('small')
+			time.appendChild(daySmall)
+			appendTextNode(daySmall, state.time.dayOfTheWeek)
+			appendTextNode(time, state.time.timeString)
+		}
 	}
 	return view
 }
@@ -70,6 +78,10 @@ const testState = {
 			weather: 'Drizzle',
 			weatherIcon: '🌧',
 			moonPhase: '🌗',
+		},
+		time: {
+			dayOfTheWeek: 'Wednesday',
+			timeString: '652/4/15 17:46',
 		},
 	},
 }
