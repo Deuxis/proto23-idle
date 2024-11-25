@@ -4,16 +4,16 @@ const root = document.getElementById('gameContainer')
 /**
  * Create element with optional id, CSS classes and style
  * @param {string} tagName
- * @param {{id?: string, classes?: string, style?: string}} [options] 
+ * @param {{id?: string, classes?: string[], style?: object}} [options] 
  * @returns {HTMLElement}
  */
 const createElement = (tagName, { id, classes, style } = {}) => {
 	/** @type {HTMLElement} */
 	const result = document.createElement(tagName)
 	if (id) result.id = id
-	if (classes) result.className = classes
+	if (classes) result.className = classes.join(' ')
 	if (style) {
-		for (const [styleKey, styleVal] of style) {
+		for (const [styleKey, styleVal] of Object.entries(style)) {
 			result.style[styleKey] = styleVal
 		}
 	}
@@ -21,13 +21,29 @@ const createElement = (tagName, { id, classes, style } = {}) => {
 }
 const createTextNode = (str) => document.createTextNode(str)
 
-const renderActView = () => {
-	const view = createElement('div', { id: 'actView', classes: 'actView' })
+const renderControlView = (controlState) => {
+	const view = createElement('div', { id: 'ctrmg' })
+	{
+		const overviewBar = createElement('div', { id: 'ctrm_1' })
+		view.appendChild(overviewBar)
+		const someDiv = createElement('div')
+		overviewBar.appendChild(someDiv)
+		const location = createElement('div', { id: 'ctr_l', style: { opacity: 1 } })
+		someDiv.appendChild(location)
+		location.appendChild(createTextNode('Location:'))
+		const locationDisplay = createElement('div')
+		location.appendChild(locationDisplay)
+		const locationDisplayText1 = createElement('span')
+		locationDisplay.appendChild(locationDisplayText1)
+		locationDisplayText1.appendChild(createTextNode(`|${controlState.location}|`))
+		const locationDisplayText2 = createElement('span')
+		locationDisplay.appendChild(locationDisplayText2)
+	}
 	return view
 }
 
 const ui = {
-	actView: renderActView()
+	controlView: renderControlView({ location: 'Dojo, training area' })
 }
 
 const genLoadingScreen = () => {
@@ -44,7 +60,7 @@ const decorateGameContainer = (gameContainer) => {
 }
 
 const genMainUi = () => {
-	return ui.actView
+	return ui.controlView
 }
 
 export const init = () => {
