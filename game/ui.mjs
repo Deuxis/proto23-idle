@@ -43,8 +43,21 @@ const renderControlView = (controlState) => {
 	return view
 }
 
+const testState = {
+	controlView: {
+		location: 'Dojo, training area',
+		weather: {
+			seasonColor: 'springgreen',
+			season: '春', // Spring
+			weather: 'Drizzle',
+			weatherIcon: '🌧',
+			moonPhase: '🌗',
+		},
+	},
+}
+
 const ui = {
-	controlView: renderControlView({ location: 'Dojo, training area' })
+	controlView: renderControlView(testState.controlView)
 }
 
 const genLoadingScreen = () => {
