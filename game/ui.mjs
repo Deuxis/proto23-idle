@@ -22,23 +22,41 @@ const createElement = (tagName, { id, classes, style } = {}) => {
 const createTextNode = (str) => document.createTextNode(str)
 const appendTextNode = (elem, str) => elem.appendChild(createTextNode(str))
 
-const renderControlView = (controlState) => {
+const renderControlView = (state) => {
 	const view = createElement('div', { id: 'ctrmg' })
 	{
 		const overviewBar = createElement('div', { id: 'ctrm_1' })
 		view.appendChild(overviewBar)
-		const someDiv = createElement('div')
-		overviewBar.appendChild(someDiv)
-		const location = createElement('div', { id: 'ctr_l', style: { opacity: 1 } })
-		someDiv.appendChild(location)
-		location.appendChild(createTextNode('Location:'))
-		const locationDisplay = createElement('div')
-		location.appendChild(locationDisplay)
-		const locationDisplayText1 = createElement('span')
-		locationDisplay.appendChild(locationDisplayText1)
-		locationDisplayText1.appendChild(createTextNode(`|${controlState.location}|`))
-		const locationDisplayText2 = createElement('span')
-		locationDisplay.appendChild(locationDisplayText2)
+		const container = createElement('div')
+		overviewBar.appendChild(container)
+		{
+			const location = createElement('div', { id: 'ctr_l', style: { opacity: 1 } })
+			container.appendChild(location)
+			location.appendChild(createTextNode('Location:'))
+			const locationDisplay = createElement('div')
+			location.appendChild(locationDisplay)
+			const locationSpan1 = createElement('span')
+			locationDisplay.appendChild(locationSpan1)
+			locationSpan1.appendChild(createTextNode(`|${state.location}|`))
+			const locationSpan2 = createElement('span')
+			locationDisplay.appendChild(locationSpan2)
+		}
+		{
+			const weather = createElement('div', { id: 'ctr_w' })
+			container.appendChild(weather)
+			const seasonSmall = createElement('small', { style: { color: state.weather.seasonColor } })
+			weather.appendChild(seasonSmall)
+			appendTextNode(seasonSmall, `[${state.weather.season}]`)
+			const weatherText = createElement('span')
+			weather.appendChild(weatherText)
+			appendTextNode(weatherText, state.weather.weather)
+			const weatherIcon = createElement('span')
+			weather.appendChild(weatherIcon)
+			appendTextNode(weatherIcon, state.weather.weatherIcon)
+			const moonPhase = createElement('span')
+			weather.appendChild(moonPhase)
+			appendTextNode(moonPhase, state.weather.moonPhase)
+		}
 	}
 	return view
 }
