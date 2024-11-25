@@ -20,6 +20,7 @@ const createElement = (tagName, { id, classes, style } = {}) => {
 	return result
 }
 const createTextNode = (str) => document.createTextNode(str)
+const appendTextNode = (elem, str) => elem.appendChild(createTextNode(str))
 
 const renderControlView = (controlState) => {
 	const view = createElement('div', { id: 'ctrmg' })
