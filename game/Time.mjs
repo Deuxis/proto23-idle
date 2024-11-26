@@ -53,7 +53,9 @@ export class Time {
 
 	get dateTimeString() {
 		const { year, season, day, hour, minute } = this.toGameDateTime()
-		return `${year}/${season}/${day} ${hour}:${minute}`
+		const hourString = hour < 10 ? `0${hour}` : hour
+		const minuteString = minute < 10 ? `0${minute}` : minute
+		return `${year}/${season}/${day} ${hourString}:${minuteString}`
 	}
 
 	// TODO

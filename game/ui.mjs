@@ -73,7 +73,7 @@ const renderControlView = (state) => {
 			const daySmall = createElement('small')
 			timeDiv.appendChild(daySmall)
 			appendTextNode(daySmall, time.dayOfTheWeek)
-			appendTextNode(timeDiv, time.dateTimeString)
+			appendTextNode(timeDiv, ' ' + time.dateTimeString)
 		}
 	}
 	// Situation and options display
