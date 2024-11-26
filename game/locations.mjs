@@ -1,4 +1,10 @@
 import * as creatures from './creatures.mjs'
+import { game } from './main.mjs'
+
+// Since atm we just have one global game object, these shorthands are more convenient
+// than passing down parent objects down to state and accessing their methods via this.parent.parent.parent.method
+const changeSituation = (...args) => game.gameState.location.changeSituation(...args)
+const changeState = (...args) => game.gameState.location.currentSituation.changeState(...args)
 
 /**
  * Location is 4-level:
@@ -14,6 +20,10 @@ class Location {
 	 * Situations map, contains constructors of possible situations
 	 */
 	static situations = {}
+	/**
+	 * @type {Situation}
+	 */
+	currentSituation
 
 	constructor(situationId, stateId) {
 		this.changeSituation(situationId, stateId)
@@ -21,15 +31,14 @@ class Location {
 
 	changeSituation(situationId, stateId, ...args) {
 		// @ts-ignore
-		this.currentSituation = new this.constructor.situations[situationId](this, stateId, ...args)
+		this.currentSituation = new this.constructor.situations[situationId](stateId, ...args)
 	}
 }
 class Situation {
 	static battle = false
 	static states = {}
 
-	constructor(parentLocation, stateId) {
-		this.parentLocation = parentLocation
+	constructor(stateId) {
 		this.changeState(stateId)
 	}
 
@@ -49,43 +58,43 @@ export class Dojo extends Location {
 
 	static situations = {
 		WakingUp: class WakingUp extends Situation {
-			constructor(parentLocation, stateId = 'w1') {
-				super(parentLocation, stateId)
+			constructor(stateId = 'w1') {
+				super(stateId)
 			}
 			static states = {
 				w1: {
 					text: '???: Kid',
 					options: [{
 						text: '"..."',
-						onChoose: function () { this.changeState('w2') },
+						onChoose: () => changeState('w2'),
 					}],
 				},
 				w2: {
 					text: '???: Quit daydreaming',
 					options: [{
 						text: '"?"',
-						onChoose: function () { this.changeState('w3') },
+						onChoose: () => changeState('w3'),
 					}],
 				},
 				w3: {
 					text: '???: You have training to complete',
 					options: [{
 						text: '"!"',
-						onChoose: function () { this.changeState('w4') },
+						onChoose: () => changeState('w4'),
 					}],
 				},
 				w4: {
 					text: '???: Grab your stuff and get to it',
 					options: [{
 						text: '"..."',
-						onChoose: function () { this.changeState('difficultySelect') },
+						onChoose: () => changeState('difficultySelect'),
 					}],
 				},
 				difficultySelect: {
 					text: '"Select the difficulty"',
 					options: [{
 						text: '"Easiest"',
-						onChoose: function () { this.parentLocation.changeSituation('TrainingAreaEasiest') },
+						onChoose: () => changeSituation('TrainingAreaEasiest'),
 					}],
 				},
 			}

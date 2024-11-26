@@ -1,6 +1,17 @@
 import GameState from "./GameState.mjs"
+import { game } from "./main.mjs"
 import settings from "./settings.mjs"
 const root = document.getElementById('gameContainer')
+
+/**
+ * Run a function and render after
+ * @param {Function} func
+ */
+const withRender = (func) => {
+	const result = func()
+	render(game.gameState)
+	return result
+}
 
 /**
  * Create element with optional id, CSS classes and style
@@ -93,6 +104,7 @@ const renderControlView = (state) => {
 		for (const option of situationState.options) {
 			const optionDiv = createElement('div', { classes: ['chs'] })
 			situationDisplay.appendChild(optionDiv)
+			optionDiv.addEventListener('click', () => (withRender(option.onChoose)))
 			appendTextNode(optionDiv, option.text)
 		}
 	}
