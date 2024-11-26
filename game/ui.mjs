@@ -1,3 +1,4 @@
+import GameState from "./GameState.mjs"
 import settings from "./settings.mjs"
 const root = document.getElementById('gameContainer')
 
@@ -22,11 +23,15 @@ const createElement = (tagName, { id, classes, style } = {}) => {
 const createTextNode = (str) => document.createTextNode(str)
 const appendTextNode = (elem, str) => elem.appendChild(createTextNode(str))
 
-/** Bottom-center screen describing current situation and possible actions */
+/** 
+ * Bottom-center screen describing current situation and possible actions 
+ * @param {GameState} state
+ */
 const renderControlView = (state) => {
 	const view = createElement('div', { id: 'ctrmg' })
 	// Top bar with location, weather and time
 	{
+		const time = state.time
 		const overviewBar = createElement('div', { id: 'ctrm_1' })
 		view.appendChild(overviewBar)
 		const container = createElement('div')
@@ -39,39 +44,41 @@ const renderControlView = (state) => {
 			location.appendChild(locationDisplay)
 			const locationSpan1 = createElement('span')
 			locationDisplay.appendChild(locationSpan1)
-			locationSpan1.appendChild(createTextNode(`|${state.location}|`))
+			locationSpan1.appendChild(createTextNode(`|${state.location.name}|`))
 			const locationSpan2 = createElement('span')
 			locationDisplay.appendChild(locationSpan2)
 		}
 		{
-			const { seasonColor, season, weather, weatherIcon, moonPhase } = state.weather
+			// const { seasonColor, season, weather, weatherIcon, moonPhase } = state.weather
+			const season = time.season
+			const weather = state.weather
 			const weatherDiv = createElement('div', { id: 'ctr_w' })
 			container.appendChild(weatherDiv)
-			const seasonSmall = createElement('small', { style: { color: seasonColor } })
+			const seasonSmall = createElement('small', { style: { color: season.color } })
 			weatherDiv.appendChild(seasonSmall)
-			appendTextNode(seasonSmall, `[${season}]`)
+			appendTextNode(seasonSmall, `[${season.name.jp}]`)
 			const weatherText = createElement('span')
 			weatherDiv.appendChild(weatherText)
-			appendTextNode(weatherText, weather)
+			appendTextNode(weatherText, weather.name)
 			const weatherIconSpan = createElement('span')
 			weatherDiv.appendChild(weatherIconSpan)
-			appendTextNode(weatherIconSpan, weatherIcon)
+			appendTextNode(weatherIconSpan, weather.icon)
 			const moonPhaseSpan = createElement('span')
 			weatherDiv.appendChild(moonPhaseSpan)
-			appendTextNode(moonPhaseSpan, moonPhase)
+			appendTextNode(moonPhaseSpan, time.moonPhase.icon)
 		}
 		{
-			const time = createElement('div', { id: 'ctr_t' })
-			container.appendChild(time)
+			const timeDiv = createElement('div', { id: 'ctr_t' })
+			container.appendChild(timeDiv)
 			const daySmall = createElement('small')
-			time.appendChild(daySmall)
-			appendTextNode(daySmall, state.time.dayOfTheWeek)
-			appendTextNode(time, state.time.timeString)
+			timeDiv.appendChild(daySmall)
+			appendTextNode(daySmall, time.dayOfTheWeek)
+			appendTextNode(timeDiv, time.dateTimeString)
 		}
 	}
 	// Situation and options display
 	{
-		const { description, options } = state.situation
+		const situationState = state.location.currentSituation.currentState
 		const containerOuter = createElement('div')
 		view.appendChild(containerOuter)
 		const containerInner = createElement('div')
@@ -81,44 +88,15 @@ const renderControlView = (state) => {
 		// Description of the situation
 		const descriptionDiv = createElement('div', { id: 'chs' })
 		situationDisplay.appendChild(descriptionDiv)
-		appendTextNode(descriptionDiv, description)
+		appendTextNode(descriptionDiv, situationState.text)
 		// Options
-		for (const option of options) {
+		for (const option of situationState.options) {
 			const optionDiv = createElement('div', { classes: ['chs'] })
 			situationDisplay.appendChild(optionDiv)
-			appendTextNode(optionDiv, option)
+			appendTextNode(optionDiv, option.text)
 		}
 	}
 	return view
-}
-
-const testState = {
-	controlView: {
-		location: 'Dojo, training area',
-		weather: {
-			seasonColor: 'springgreen',
-			season: '春', // Spring
-			weather: 'Drizzle',
-			weatherIcon: '🌧',
-			moonPhase: '🌗',
-		},
-		time: {
-			dayOfTheWeek: 'Wednesday',
-			timeString: '652/4/15 17:46',
-		},
-		situation: {
-			description: 'Select the difficulty',
-			options: [
-				'Easiest',
-				'Easy',
-				'Normal',
-			],
-		},
-	},
-}
-
-const ui = {
-	controlView: renderControlView(testState.controlView)
 }
 
 const genLoadingScreen = () => {
@@ -134,8 +112,8 @@ const decorateGameContainer = (gameContainer) => {
 	gameContainer.style.background = settings.mainBG
 }
 
-const genMainUi = () => {
-	return ui.controlView
+export const render = (gameState) => {
+	root.replaceChildren(renderControlView(gameState))
 }
 
 export const init = () => {
@@ -147,5 +125,4 @@ export const init = () => {
 	 */
 	root.replaceChildren(genLoadingScreen())
 	decorateGameContainer(root)
-	root.replaceChildren(genMainUi())
 }

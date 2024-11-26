@@ -17,6 +17,9 @@ Adds initial stuff to storage box, **TODO** when implementing storage box
 
 295: Fade out loading screen, delete it (repeated for its text elem)
 
+# Dictionary
+Chs: location (choice screen?)
+
 # General TOC
 
 ## 298-751: TITLES

@@ -1,8 +1,11 @@
-import { init as initUi } from "./ui.mjs"
+import GameState from "./GameState.mjs"
+import { init as initUi, render } from "./ui.mjs"
 
-class Game {
+export class Game {
 	constructor() {
+		this.gameState = new GameState()
 		initUi()
+		render(this.gameState)
 	}
 }
 
