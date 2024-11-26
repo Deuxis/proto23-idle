@@ -35,7 +35,7 @@ class Situation {
 
 	changeState(stateId, ...args) {
 		// @ts-ignore
-		this.currentState = this.constructor.states['w1']
+		this.currentState = this.constructor.states[stateId]
 	}
 }
 
@@ -49,8 +49,8 @@ export class Dojo extends Location {
 
 	static situations = {
 		WakingUp: class WakingUp extends Situation {
-			constructor(stateId = 'w1') {
-				super('w1')
+			constructor(parentLocation, stateId = 'w1') {
+				super(parentLocation, stateId)
 			}
 			static states = {
 				w1: {
