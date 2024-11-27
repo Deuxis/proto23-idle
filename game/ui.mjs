@@ -53,10 +53,11 @@ const renderControlView = (state) => {
 		view.appendChild(overviewBar)
 		const container = createElement('div')
 		overviewBar.appendChild(container)
-		if (!hiddenElements.location) {
+		{
 			const location = createElement('div', { id: 'ctr_l', style: { opacity: 1 } })
 			container.appendChild(location)
 			location.appendChild(createTextNode('Location:'))
+			if (hiddenElements.location) location.style.visibility = 'hidden'
 			const locationDisplay = createElement('div')
 			location.appendChild(locationDisplay)
 			const locationSpan1 = createElement('span')
@@ -65,12 +66,13 @@ const renderControlView = (state) => {
 			const locationSpan2 = createElement('span')
 			locationDisplay.appendChild(locationSpan2)
 		}
-		if (!hiddenElements.weather) {
+		{
 			// const { seasonColor, season, weather, weatherIcon, moonPhase } = state.weather
 			const season = time.season
 			const weather = state.weather
 			const weatherDiv = createElement('div', { id: 'ctr_w' })
 			container.appendChild(weatherDiv)
+			if (hiddenElements.weather) container.style.visibility = 'hidden'
 			const seasonSmall = createElement('small', { style: { color: season.color } })
 			weatherDiv.appendChild(seasonSmall)
 			appendTextNode(seasonSmall, `[${season.name.jp}]`)
@@ -84,9 +86,10 @@ const renderControlView = (state) => {
 			weatherDiv.appendChild(moonPhaseSpan)
 			appendTextNode(moonPhaseSpan, time.moonPhase.icon)
 		}
-		if (!hiddenElements.time) {
+		{
 			const timeDiv = createElement('div', { id: 'ctr_t' })
 			container.appendChild(timeDiv)
+			if (hiddenElements.time) container.style.visibility = 'hidden'
 			const daySmall = createElement('small')
 			timeDiv.appendChild(daySmall)
 			appendTextNode(daySmall, time.dayOfTheWeek)
