@@ -174,6 +174,9 @@ const decorateGameContainer = (gameContainer) => {
 	gameContainer.style.background = settings.mainBG
 }
 
+// Holds the element tree so it doesn't re-render on everything
+const ui = {}
+
 export const render = (gameState) => {
 	root.replaceChildren(renderCharacterScreen(gameState), renderControlView(gameState))
 }
