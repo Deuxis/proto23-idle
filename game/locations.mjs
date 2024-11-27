@@ -1,5 +1,6 @@
-import * as creatures from './creatures.mjs'
+import * as creatures from './creatures/creatures.mjs'
 import { game } from './main.mjs'
+import { hiddenElements } from './ui.mjs'
 
 // Since atm we just have one global game object, these shorthands are more convenient
 // than passing down parent objects down to state and accessing their methods via this.parent.parent.parent.method
@@ -45,6 +46,7 @@ class Situation {
 	changeState(stateId, ...args) {
 		// @ts-ignore
 		this.currentState = this.constructor.states[stateId]
+		this.currentState.onStart()
 	}
 }
 
@@ -64,6 +66,7 @@ export class Dojo extends Location {
 			static states = {
 				w1: {
 					text: '???: Kid',
+					onStart: () => { },
 					options: [{
 						text: '"..."',
 						onChoose: () => changeState('w2'),
@@ -71,6 +74,10 @@ export class Dojo extends Location {
 				},
 				w2: {
 					text: '???: Quit daydreaming',
+					onStart: () => { // Also unlock weather and time UI
+						hiddenElements.weather = false
+						hiddenElements.time = false
+					},
 					options: [{
 						text: '"?"',
 						onChoose: () => changeState('w3'),
@@ -78,6 +85,7 @@ export class Dojo extends Location {
 				},
 				w3: {
 					text: '???: You have training to complete',
+					onStart: () => { }, // Also unlock character UI
 					options: [{
 						text: '"!"',
 						onChoose: () => changeState('w4'),
@@ -85,6 +93,10 @@ export class Dojo extends Location {
 				},
 				w4: {
 					text: '???: Grab your stuff and get to it',
+					onStart: () => {
+						hiddenElements.location = false
+						// Also unlock inventory UI
+					},
 					options: [{
 						text: '"..."',
 						onChoose: () => changeState('difficultySelect'),
@@ -92,7 +104,8 @@ export class Dojo extends Location {
 				},
 				difficultySelect: {
 					text: '"Select the difficulty"',
-					options: [{
+					onStart: () => { }, // Also unlock message log, contol view bottom panel, and get A Stick and 15 Cure Grass
+					options: [{ // All options also unlock enemy UI and initiate battle
 						text: '"Easiest"',
 						onChoose: () => changeSituation('TrainingAreaEasiest'),
 					}],

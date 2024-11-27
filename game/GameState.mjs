@@ -1,3 +1,4 @@
+import { You } from "./creatures/You.mjs"
 import { Dojo } from "./locations.mjs"
 import Time from "./Time.mjs"
 import { WEATHER } from "./weather.mjs"
@@ -9,11 +10,12 @@ import { WEATHER } from "./weather.mjs"
  * TODO: loading and saving game state
  */
 export class GameState {
-	constructor() {
-		this.location = new Dojo()
-		this.time = new Time()
-		this.weather = WEATHER.drizzle
-	}
+	location = new Dojo()
+	time = new Time()
+	weather = WEATHER.drizzle
+	you = new You()
+	/** @type {import('./creatures/creatures.mjs').Creature} */
+	enemy = undefined
 }
 
 export default GameState

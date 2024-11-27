@@ -3,6 +3,12 @@ import { game } from "./main.mjs"
 import settings from "./settings.mjs"
 const root = document.getElementById('gameContainer')
 
+export const hiddenElements = {
+	weather: true,
+	time: true,
+	location: true,
+}
+
 /**
  * Run a function and render after
  * @param {Function} func
@@ -47,7 +53,7 @@ const renderControlView = (state) => {
 		view.appendChild(overviewBar)
 		const container = createElement('div')
 		overviewBar.appendChild(container)
-		{
+		if (!hiddenElements.location) {
 			const location = createElement('div', { id: 'ctr_l', style: { opacity: 1 } })
 			container.appendChild(location)
 			location.appendChild(createTextNode('Location:'))
@@ -59,7 +65,7 @@ const renderControlView = (state) => {
 			const locationSpan2 = createElement('span')
 			locationDisplay.appendChild(locationSpan2)
 		}
-		{
+		if (!hiddenElements.weather) {
 			// const { seasonColor, season, weather, weatherIcon, moonPhase } = state.weather
 			const season = time.season
 			const weather = state.weather
@@ -78,7 +84,7 @@ const renderControlView = (state) => {
 			weatherDiv.appendChild(moonPhaseSpan)
 			appendTextNode(moonPhaseSpan, time.moonPhase.icon)
 		}
-		{
+		if (!hiddenElements.time) {
 			const timeDiv = createElement('div', { id: 'ctr_t' })
 			container.appendChild(timeDiv)
 			const daySmall = createElement('small')
