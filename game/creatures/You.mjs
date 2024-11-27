@@ -1,8 +1,9 @@
 import { Inventory } from "../Inventory.mjs"
+import { Nobody } from "../titles.mjs"
 import { Creature, CREATURE_TYPES } from "./creatures.mjs"
 
 export class You extends Creature {
-	name = 'You'
+	standardName = 'You'
 	type = CREATURE_TYPES.You
 	level = 1
 	hp = 39
@@ -17,6 +18,7 @@ export class You extends Creature {
 	maxEnergy = 200
 	/** @type {Inventory} */
 	inventory
+	title = new Nobody()
 
 	constructor(properties) {
 		super(properties)

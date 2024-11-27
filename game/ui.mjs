@@ -37,6 +37,13 @@ const createElement = (tagName, { id, classes, style } = {}) => {
 	}
 	return result
 }
+/**
+ * Create and append element with optional id, CSS classes and style
+ * @param {HTMLElement} elem
+ * @param {[string, {id?: string, classes?: string[], style?: object}?]} [args] 
+ * @returns {HTMLElement}
+ */
+const appendElement = (elem, ...args) => elem.appendChild(createElement(...args))
 const createTextNode = (str) => document.createTextNode(str)
 const appendTextNode = (elem, str) => elem.appendChild(createTextNode(str))
 
@@ -120,7 +127,27 @@ const renderControlView = (state) => {
 	return view
 }
 
-const genLoadingScreen = () => {
+const renderCharacterScreen = (state) => {
+	const you = state.you
+	const view = createElement('div', { id: 'd1', classes: ['d'] })
+	const container = createElement('div')
+	view.appendChild(container)
+	const nameDivOuter = createElement('div', { classes: ['d2'] })
+	container.appendChild(nameDivOuter)
+	const nameDivInner = createElement('div')
+	nameDivOuter.appendChild(nameDivInner)
+	appendTextNode(nameDivInner, you.name)
+	const nameInput = createElement('input', { id: 'nch' })
+	nameDivOuter.appendChild(nameInput)
+	const lvlTitleDiv = appendElement(container, 'div', { classes: ['d3'] })
+	appendTextNode(lvlTitleDiv, `lvl:${you.level} '${you.title.name}'`)
+	const hpDivOuter = appendElement(container, 'div', { classes: ['hp'] })
+	const hpDivInner = appendElement(hpDivOuter, 'div', { classes: ['hpp'] })
+	appendTextNode(hpDivInner, `hp: ${you.hp}/${you.maxHp}`)
+	return view
+}
+
+const renderLoadingScreen = () => {
 	const loading = createElement('div')
 	loading.className = 'loadingContainer'
 	const loadingSpan = createElement('span')
@@ -134,7 +161,7 @@ const decorateGameContainer = (gameContainer) => {
 }
 
 export const render = (gameState) => {
-	root.replaceChildren(renderControlView(gameState))
+	root.replaceChildren(renderCharacterScreen(gameState), renderControlView(gameState))
 }
 
 export const init = () => {
@@ -144,6 +171,6 @@ export const init = () => {
 	 * Leaving it in case that happens (TEMP for dev purposes),
 	 * or I make the main UI rendering async with perceptible delay.
 	 */
-	root.replaceChildren(genLoadingScreen())
+	root.replaceChildren(renderLoadingScreen())
 	decorateGameContainer(root)
 }
