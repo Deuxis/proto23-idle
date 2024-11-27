@@ -1,6 +1,6 @@
 import * as creatures from './creatures/creatures.mjs'
 import { game } from './main.mjs'
-import { hiddenElements } from './ui.mjs'
+import * as ui from './ui/ui.mjs'
 
 // Since atm we just have one global game object, these shorthands are more convenient
 // than passing down parent objects down to state and accessing their methods via this.parent.parent.parent.method
@@ -33,6 +33,7 @@ class Location {
 	changeSituation(situationId, stateId, ...args) {
 		// @ts-ignore
 		this.currentSituation = new this.constructor.situations[situationId](stateId, ...args)
+		ui.updateSituation(this.currentSituation)
 	}
 }
 class Situation {
@@ -47,6 +48,7 @@ class Situation {
 		// @ts-ignore
 		this.currentState = this.constructor.states[stateId]
 		this.currentState.onStart()
+		ui.updateSituation(this)
 	}
 }
 
@@ -75,8 +77,9 @@ export class Dojo extends Location {
 				w2: {
 					text: '???: Quit daydreaming',
 					onStart: () => { // Also unlock weather and time UI
-						hiddenElements.weather = false
-						hiddenElements.time = false
+						ui.hiddenElements.weather = false
+						ui.hiddenElements.time = false
+						ui.updateVisibility()
 					},
 					options: [{
 						text: '"?"',
@@ -94,7 +97,8 @@ export class Dojo extends Location {
 				w4: {
 					text: '???: Grab your stuff and get to it',
 					onStart: () => {
-						hiddenElements.location = false
+						ui.hiddenElements.location = false
+						ui.updateVisibility()
 						// Also unlock inventory UI
 					},
 					options: [{

@@ -1,3 +1,5 @@
+import { updateTime } from "./ui/ui.mjs"
+
 const SEASONS_IN_YEAR = 4
 const DAYS_IN_SEASON = 90
 const HOURS_IN_DAY = 24
@@ -31,6 +33,7 @@ export class Time {
 
 	addTime(secondsPassed) {
 		this.#time += secondsPassed
+		updateTime()
 	}
 
 	// TEMP: Ugh, I'm sure there's a better way, but not now

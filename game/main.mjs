@@ -1,10 +1,10 @@
 import GameState from "./GameState.mjs"
-import { init as initUi, render } from "./ui.mjs"
+import { init as initUi, render } from "./ui/ui.mjs"
 
 export class Game {
 	constructor() {
-		this.gameState = new GameState()
 		initUi()
+		this.gameState = new GameState()
 		render(this.gameState)
 	}
 }
