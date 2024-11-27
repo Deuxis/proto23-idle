@@ -127,9 +127,14 @@ const renderControlView = (state) => {
 	return view
 }
 
+/** 
+ * Top-left screen describing your character status 
+ * @param {GameState} state
+ */
 const renderCharacterScreen = (state) => {
 	const you = state.you
 	const view = createElement('div', { id: 'd1', classes: ['d'] })
+	// Everything except current effects is inside this unnamed div container
 	const container = createElement('div')
 	view.appendChild(container)
 	const nameDivOuter = createElement('div', { classes: ['d2'] })
@@ -142,8 +147,17 @@ const renderCharacterScreen = (state) => {
 	const lvlTitleDiv = appendElement(container, 'div', { classes: ['d3'] })
 	appendTextNode(lvlTitleDiv, `lvl:${you.level} '${you.title.name}'`)
 	const hpDivOuter = appendElement(container, 'div', { classes: ['hp'] })
+	hpDivOuter.style.width = `${(you.hp / you.maxHp) * 100}%`
 	const hpDivInner = appendElement(hpDivOuter, 'div', { classes: ['hpp'] })
 	appendTextNode(hpDivInner, `hp: ${you.hp}/${you.maxHp}`)
+	const expDivOuter = appendElement(container, 'div', { classes: ['exp'] })
+	expDivOuter.style.width = `${(you.exp / you.maxExp) * 100}%`
+	const expDivInner = appendElement(expDivOuter, 'div', { id: 'expp' })
+	appendTextNode(expDivInner, `exp: ${you.exp}/${you.maxExp}`)
+	const energyDivOuter = appendElement(container, 'div', { classes: ['en'] })
+	energyDivOuter.style.width = `${(you.energy / you.maxEnergy) * 100}%`
+	const energyDivInner = appendElement(energyDivOuter, 'div', { id: 'enn' })
+	appendTextNode(energyDivInner, `energy: ${you.energy}/${you.maxEnergy} eff: ${Math.round(you.efficiency * 100)}%`)
 	return view
 }
 
