@@ -25,10 +25,49 @@ const SEASONS = {
 }
 
 export class Time {
-	/** Tracks current game time in minutes, which are IRL seconds */
+	#lastTimestamp = performance.now()
+	/** Miliseconds leftover from the last time update. (Since it adds full seconds.) */
+	#msPending = 0
+	/** Tracks current game time in in-game minutes, which are IRL seconds */
 	#time
+	/** requestAnimationFrame request ID, used to stop the clock */
+	#tickerId
 	constructor(time = STARTING_TIME) {
 		this.#time = time
+
+		this.startTicker()
+	}
+
+	tick(now) {
+		const msPassed = now - this.#lastTimestamp
+		const msTotal = msPassed + this.#msPending
+		const secondsPassed = Math.floor(msTotal / 1000)
+		this.#msPending = msTotal % 1000
+		// Run addTime only if secondsPassed > 0
+		secondsPassed && this.addTime(secondsPassed)
+		this.#lastTimestamp = now
+	}
+
+	/* Start the update ticker. Using requestAnimationFrame:
+	 * Pros:
+	 * - best possible clock sync, a timeout or interval would lag behind actual time,
+	 *   by almost its duration at worst case.
+	 * Cons:
+	 * - no time updates when game is not being graphically rendered
+	 *   (fine for now because we can just catch up when player returns,
+	 *   but may cause problems when battles and other more complicated time events are implemented)
+	 * - runs *a lot* on high framerate monitors, but that's fine since tick() is pretty much free
+	 */
+	startTicker() {
+		const step = (now) => {
+			this.tick(now)
+			this.#tickerId = requestAnimationFrame(step)
+		}
+		this.#tickerId = requestAnimationFrame(step)
+	}
+	stopTicker() {
+		cancelAnimationFrame(this.#tickerId)
+		this.#tickerId = 0
 	}
 
 	addTime(secondsPassed) {
