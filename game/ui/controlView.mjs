@@ -63,7 +63,7 @@ export const updateWeather = () => {
 export const updateMoonPhase = () => reactive.moonPhase.textContent = game.gameState.time.moonPhase.icon
 export const updateTime = () => {
 	reactive.time.dayOfTheWeek.textContent = game.gameState.time.dayOfTheWeek
-	reactive.time.time.textContent = game.gameState.time.toString()
+	reactive.time.time.textContent = ' ' + game.gameState.time.dateTimeString
 }
 // Fuck it, we're re-rendering this one
 export const updateSituation = (situation) => reactive.situationContainer?.replaceChildren(renderSituation(situation))
