@@ -44,9 +44,9 @@ const reactive = {
 }
 
 export const updateVisibility = () => {
-	reactive.location.container.style.visibility = hiddenElements.location ? 'hidden' : undefined
-	reactive.weather.outerContainer.style.visibility = hiddenElements.weather ? 'hidden' : undefined
-	reactive.time.container.style.visibility = hiddenElements.time ? 'hidden' : undefined
+	reactive.location.container.style.visibility = hiddenElements.location ? 'hidden' : null
+	reactive.weather.outerContainer.style.visibility = hiddenElements.weather ? 'hidden' : null
+	reactive.time.container.style.visibility = hiddenElements.time ? 'hidden' : null
 }
 export const updateLocation = () => {
 	reactive.location.name.textContent = game.gameState.location.name
